@@ -104,6 +104,7 @@ BOOL(WINAPI* TrueCreateDirectoryW)(LPCWSTR lpPathName, LPSECURITY_ATTRIBUTES lpS
 
 DWORD(WINAPI* TrueGetFileAttributesW)(LPCWSTR lpFileName) = GetFileAttributesW;
 BOOL(WINAPI* TrueGetFileAttributesExW)(LPCWSTR lpFileName, GET_FILEEX_INFO_LEVELS fInfoLevelId, LPVOID lpFileInformation) = GetFileAttributesExW;
+BOOL(WINAPI* TrueGetFileAttributesExA)(LPCSTR lpFileName, GET_FILEEX_INFO_LEVELS fInfoLevelId, LPVOID lpFileInformation) = GetFileAttributesExA;
 
 HANDLE(WINAPI* TrueFindFirstFileW)(LPCWSTR lpFileName, LPWIN32_FIND_DATAW lpFindFileData) = FindFirstFileW;
 
@@ -150,5 +151,25 @@ LONG D_Halo5VectoredExceptionHandler(_EXCEPTION_POINTERS *ExceptionInfo)
             return EXCEPTION_CONTINUE_EXECUTION;
         }
     }
+
     return EXCEPTION_CONTINUE_SEARCH;
+}
+
+INT64(WINAPI *P_UnknownForzaFunction)(UINT) = nullptr;
+BOOL(WINAPI *P_ForzaMotorsport5LoadBank)(UINT64 *a1, INT64 a2) = nullptr;
+
+//Rodrigo Todescatto: This function is related to FMOD Banks loading, but I'm not sure what it does.
+BOOL D_UnknownForzaFunction(UINT a1)
+{
+    //Rodrigo Todescatto: Returning TRUE makes the game load the FMOD Banks, returning FALSE
+    //causes a black screen hang after the Playground Games/Turn 10/Microsoft Studios video.
+    return TRUE;
+}
+
+BOOL D_ForzaMotorsport5LoadBank(UINT64 *a1, INT64 a2)
+{
+    BOOL Result = P_ForzaMotorsport5LoadBank(a1, a2);
+    if (!Result)
+        printf("Forza Motorsport 5 failed to load FMOD bankk!\n");
+    return Result;
 }

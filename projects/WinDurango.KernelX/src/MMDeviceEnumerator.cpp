@@ -109,7 +109,7 @@ HRESULT __stdcall MMXboxDeviceEnumerator::UnregisterEndpointNotificationCallback
 
 HRESULT __stdcall MMXboxDeviceEnumerator::GetHdAudioChannelCounts(UINT *pHdmiChannelCount, UINT *pSpdifChannelCount)
 {
-    *pHdmiChannelCount = 8;
+    *pHdmiChannelCount = 2;
     *pSpdifChannelCount = 2;
     return S_OK;
 }

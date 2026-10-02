@@ -23,9 +23,11 @@ abi_t g_ABI{};
 // Immediate Context fence object.
 BOOL m_Fence = TRUE;
 
-// Multimap for placement update
-std::multimap<void*, void *> g_ResourceMap;
+// Maps for placement update
+std::multimap<void*, void*> g_ResourceMap;
+std::unordered_map<void*, void*> g_AllocationBaseMap;
 std::mutex g_ResourceMapMutex;
+std::mutex g_UpdateSubresourceMutex;
 
 #pragma comment(lib, "onecore.lib")
 #pragma comment(lib, "kernel32.lib")

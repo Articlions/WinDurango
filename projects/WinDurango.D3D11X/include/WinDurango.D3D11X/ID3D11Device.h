@@ -14,7 +14,6 @@ using namespace Microsoft::WRL;
      D3D11_RESOURCE_MISC_SHARED_NTHANDLE | D3D11_RESOURCE_MISC_RESTRICTED_CONTENT |                                    \
      D3D11_RESOURCE_MISC_RESTRICT_SHARED_RESOURCE | D3D11_RESOURCE_MISC_RESTRICT_SHARED_RESOURCE_DRIVER |              \
      D3D11_RESOURCE_MISC_GUARDED)
-#define D3D11_CREATE_DEFERRED_CONTEXT_DRAW_BUNDLES 0x20000
 
 //Implementation provided by DaZombieKiller back in GenERA!
 HRESULT OpenAdapterFromDevice(_In_ ID3D11Device *pDevice, _Out_ D3DKMT_HANDLE *phAdapter)
@@ -53,10 +52,12 @@ template <abi_t ABI> class D3D11DeviceX : public gfx::ID3D11DeviceX<ABI>
 {
 public:
     ID3D11Device2 *m_pFunction = nullptr;
+    ID3D11DeviceContext2 *m_pContext = nullptr;
 
     D3D11DeviceX(ID3D11Device2* pDevice)
     {
         m_pFunction = pDevice;
+        m_pFunction->GetImmediateContext2(&m_pContext);
         g_Device = m_pFunction;
         if (this->m_RefCount != 0)
             this->m_RefCount = 0;

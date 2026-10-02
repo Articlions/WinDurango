@@ -54,6 +54,18 @@ void KernelxInitialize(HINSTANCE hinstDLL)
             DetourAttach((void**)&P_Halo5VectoredExceptionHandler, &D_Halo5VectoredExceptionHandler);
         }
 
+        //Halo 5: Guardians (Delta)
+        if (TitleID == L"6CBA658F")
+        {
+            HMODULE XboxLiveWrapper = LoadLibraryW(L"XboxLiveServicesWrapperLib_Release.dll");
+            XWinePatchImport(XboxLiveWrapper, GetRuntimeModule(),
+                         "?GetActivationFactoryByPCWSTR@@YAJPEAXAEAVGuid@Platform@@PEAPEAX@Z",
+                         GetActivationFactoryRedirect);
+
+            *(void**)&P_Halo5VectoredExceptionHandler = (char*)GetModuleHandleW(nullptr) + 0x7E3880;
+            DetourAttach((void**)&P_Halo5VectoredExceptionHandler, &D_Halo5VectoredExceptionHandler);
+        }
+
         //Forza Horizon 2 Demo
         if (TitleID == L"265E1020" && Version == L"1.0.0.5")
         {
@@ -68,6 +80,8 @@ void KernelxInitialize(HINSTANCE hinstDLL)
             DetourAttach((void**)&P_StartForzaThread, &D_StartForzaThread);
             *(void**)&P_FmodThreadProc = (char*)GetModuleHandleW(nullptr) + 0x19D3F80;
             DetourAttach((void**)&P_FmodThreadProc, &D_FmodThreadProc);
+            *(void **)&P_UnknownForzaFunction = (char *)GetModuleHandleW(nullptr) + 0x11D0470;
+            DetourAttach((void**)&P_UnknownForzaFunction, &D_UnknownForzaFunction);
         }
 
         //Forza Horizon 2 Presents Fast & Furious
@@ -75,6 +89,13 @@ void KernelxInitialize(HINSTANCE hinstDLL)
         {
             *(void**)&P_StartForzaThread = (char*)GetModuleHandleW(nullptr) + 0x10A7C00;
             DetourAttach((void**)&P_StartForzaThread, &D_StartForzaThread);
+        }
+
+        //Forza Motorsport 5
+        if (TitleID == L"7B35D917" && Version == L"1.0.0.20")
+        {
+            *(void**)&P_ForzaMotorsport5LoadBank = (char*)GetModuleHandleW(nullptr) + 0x622600;
+            DetourAttach((void**)&P_ForzaMotorsport5LoadBank, &D_ForzaMotorsport5LoadBank);
         }
 
         //Peggle 2
@@ -104,6 +125,7 @@ void KernelxInitialize(HINSTANCE hinstDLL)
         DetourAttach(&reinterpret_cast<PVOID&>(TrueGetFileAttributesA), EraGetFileAttributesA);
         DetourAttach(&reinterpret_cast<PVOID&>(TrueSetFileAttributesA), EraSetFileAttributesA);
         DetourAttach(&reinterpret_cast<PVOID&>(TrueGetFileAttributesExW), EraGetFileAttributesExW);
+        DetourAttach(&reinterpret_cast<PVOID&>(TrueGetFileAttributesExA), EraGetFileAttributesExA);
         DetourAttach(&reinterpret_cast<PVOID&>(TrueFindFirstFileW), EraFindFirstFileW);
         DetourAttach(&reinterpret_cast<PVOID&>(TrueFindFirstFileA), EraFindFirstFileA);
         DetourAttach(&reinterpret_cast<PVOID&>(TrueFindNextFileA), EraFindNextFileA);

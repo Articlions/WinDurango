@@ -4,6 +4,7 @@
 #include "Hooks.h"
 #include <winternl.h>
 #include "EraCoreApplication.h"
+#include <Psapi.h>
 
 EXTERN_C CONSOLE_TYPE __stdcall GetConsoleType()
 {
@@ -140,21 +141,21 @@ EXTERN_C BOOL __stdcall TitleMemoryStatus(LPTITLEMEMORYSTATUS lpBuffer)
         return FALSE;
     }
 
-    INT64 ProcessInformation[7]{};
-    NTSTATUS Result = NtQueryInformationProcess(GetCurrentProcess(), (PROCESSINFOCLASS)(0x3A | 0x3A), ProcessInformation, 56, 0);
-    if (!NT_SUCCESS(Result))
-    {
-        SetLastError(Result);
-        return FALSE;
-    }
+    MEMORYSTATUSEX MemStatus{};
+    MemStatus.dwLength = sizeof(MemStatus);
+    GlobalMemoryStatusEx(&MemStatus);
+    UINT LastError = GetLastError();
 
-    lpBuffer->ullTotalMem = ProcessInformation[0];
-    lpBuffer->ullAvailMem = ProcessInformation[0] - ProcessInformation[1];
-    lpBuffer->ullLegacyUsed = ProcessInformation[2];
-    lpBuffer->ullLegacyAvail = ProcessInformation[4] - ProcessInformation[2];
-    lpBuffer->ullLegacyPeak = ProcessInformation[3];
-    lpBuffer->ullTitleUsed = ProcessInformation[5];
-    lpBuffer->ullTitleAvail = ProcessInformation[6] - ProcessInformation[5];
+    PROCESS_MEMORY_COUNTERS ProcessMemStatus{};
+    GetProcessMemoryInfo(GetCurrentProcess(), &ProcessMemStatus, sizeof(ProcessMemStatus));
+
+    lpBuffer->ullTotalMem = MemStatus.ullTotalPhys;
+    lpBuffer->ullAvailMem = MemStatus.ullAvailPhys;
+    lpBuffer->ullLegacyUsed = MemStatus.ullTotalVirtual - MemStatus.ullAvailVirtual;
+    lpBuffer->ullLegacyAvail = MemStatus.ullAvailVirtual;
+    lpBuffer->ullLegacyPeak = ProcessMemStatus.PeakWorkingSetSize;
+    lpBuffer->ullTitleUsed = ProcessMemStatus.WorkingSetSize;
+    lpBuffer->ullTitleAvail = MemStatus.ullAvailPhys;
 
     SetLastError(ERROR_SUCCESS);
     return TRUE;
@@ -254,7 +255,10 @@ EXTERN_C LPVOID __stdcall EraVirtualAllocEx(HANDLE hProcess, LPVOID lpAddress, S
 {
     if (flAllocationType & MEM_GRAPHICS)
     {
-        flProtect = PAGE_READONLY;
+        if (flProtect & PAGE_READWRITE)
+            flProtect &= ~PAGE_READWRITE;
+
+        flProtect |= PAGE_READONLY;
     }
 
     MEM_ADDRESS_REQUIREMENTS AddrRq;
@@ -310,8 +314,11 @@ EXTERN_C LPVOID __stdcall EraVirtualAllocEx(HANDLE hProcess, LPVOID lpAddress, S
     }
 
     if (!bMappable)
-        return VirtualAlloc2(hProcess, lpAddress, dwSize, flAllocationType & MEM_MASK, flProtect & PAGE_MASK, &ExtParam,
-                             1);
+    {
+        if (!(flAllocationType & MEM_COMMIT))
+            flAllocationType |= MEM_COMMIT;
+        return VirtualAlloc2(hProcess, lpAddress, dwSize, flAllocationType & MEM_MASK, flProtect & PAGE_MASK, &ExtParam, 1);
+    }
 
     if ((flAllocationType & MEM_4MB_PAGES) || Mappable.Is4MBPages)
         dwPageSize = PAGE_SIZE_4MB;
@@ -643,7 +650,9 @@ EXTERN_C PVOID __stdcall XMemAllocDefault(SIZE_T dwSize, ULONGLONG dwAttributes)
 
 EXTERN_C void __stdcall XMemFreeDefault(PVOID lpAddress, ULONGLONG dwAttributes)
 {
-    if (XALLOC_IS_GRAPHICS(dwAttributes))
+    auto attr = XALLOC_ATTRIBUTES { dwAttributes };
+
+    if (attr.s.dwMemoryType != XALLOC_MEMTYPE_HEAP)
     {
         EraVirtualFree(lpAddress, 0, MEM_RELEASE);
         return;
@@ -727,11 +736,28 @@ void FixRelativePath(LPCWSTR &lpFileName)
     static std::wstring convert{};
     std::wstring_view fileName(lpFileName);
 
+    if (fileName.find(L"MP4") != std::wstring::npos)
+    {
+        printf("AAAAAAAAAA");
+        DebugBreak();
+    }
+
     if (fileName.size() == 0)
         return;
 
-    int length = fileName.length();
+    if (wcsncmp(lpFileName, L"GAME:", 5) == 0)
+    {
+        static std::wstring trimPath{};
+        trimPath = fileName.substr(5);
+        fileName = trimPath.data();
+        convert = std::filesystem::current_path().c_str();
+        convert.append(fileName);
+        std::replace(convert.begin(), convert.end(), L'\\', L'/');
+        std::replace(convert.begin(), convert.end(), L'//', L'/');
 
+        lpFileName = convert.data();
+        return;
+    }
     if (fileName[0] == '.' && fileName[1] == '\\')
     {
         static std::wstring trimPath{};
@@ -785,6 +811,25 @@ void FixRelativePath(LPCWSTR &lpFileName)
 
         lpFileName = convert.data();
     }
+
+    if (wcsstr(lpFileName, L"Mount"))
+    {
+        if (!wcsstr(lpFileName, L"Mount/") && !wcsstr(lpFileName, L"Mount\\"))
+        {
+            LPCWSTR Pos = wcsstr(lpFileName, L"Mount");
+            std::wstring fixed(lpFileName);
+            size_t index = Pos - lpFileName;
+
+            fixed.insert(index + 5, L"/");
+            convert = fixed;
+
+            std::replace(convert.begin(), convert.end(), L'\\', L'/');
+            std::replace(convert.begin(), convert.end(), L'//', L'/');
+
+            lpFileName = convert.c_str();
+            return;
+        }
+    }
 }
 
 EXTERN_C HANDLE __stdcall EraCreateFileW(LPCWSTR lpFileName, DWORD dwDesiredAccess, DWORD dwShareMode,
@@ -803,8 +848,10 @@ EXTERN_C HANDLE __stdcall EraCreateFileW(LPCWSTR lpFileName, DWORD dwDesiredAcce
         return LoganHandle;
     }
 
+
     static std::wstring convert{};
-    std::wstring_view fileName(lpFileName);
+    LPCWSTR FileName = lpFileName;
+    std::wstring_view fileName(FileName);
 
     int length = fileName.length();
     if (fileName[0] == '/')
@@ -816,7 +863,7 @@ EXTERN_C HANDLE __stdcall EraCreateFileW(LPCWSTR lpFileName, DWORD dwDesiredAcce
         convert.append(L"\\");
         convert.append(fileName);
 
-        lpFileName = convert.data();
+        FileName = convert.data();
     }
     else if (fileName[0] == '\\')
     {
@@ -825,16 +872,16 @@ EXTERN_C HANDLE __stdcall EraCreateFileW(LPCWSTR lpFileName, DWORD dwDesiredAcce
     {
         convert = std::filesystem::current_path().c_str();
         convert.append(L"\\");
-        convert.append(lpFileName);
+        convert.append(FileName);
         std::replace(convert.begin(), convert.end(), L'/', L'\\');
-        lpFileName = convert.c_str();
+        FileName = convert.c_str();
     }
     else
     {
-        FixRelativePath(lpFileName);
+        FixRelativePath(FileName);
     }
 
-    HANDLE Result = TrueCreateFileW(lpFileName, dwDesiredAccess, dwShareMode, lpSecurityAttributes, dwCreationDisposition,
+    HANDLE Result = TrueCreateFileW(FileName, dwDesiredAccess, dwShareMode, lpSecurityAttributes, dwCreationDisposition,
                                     dwFlagsAndAttributes, hTemplateFile);
 
     return Result;
@@ -857,8 +904,9 @@ EXTERN_C HANDLE __stdcall EraCreateFileA(LPCSTR lpFileName, DWORD dwDesiredAcces
 EXTERN_C HANDLE __stdcall EraCreateFile2(LPCWSTR lpFileName, DWORD dwDesiredAccess, DWORD dwShareMode,
                                          DWORD dwCreationDisposition, LPCREATEFILE2_EXTENDED_PARAMETERS pCreateExParams)
 {
-    FixRelativePath(lpFileName);
-    HANDLE Result = TrueCreateFile2(lpFileName, dwDesiredAccess, dwShareMode, dwCreationDisposition, pCreateExParams);
+    LPCWSTR FileName = lpFileName;
+    FixRelativePath(FileName);
+    HANDLE Result = TrueCreateFile2(FileName, dwDesiredAccess, dwShareMode, dwCreationDisposition, pCreateExParams);
 
     return Result;
 }
@@ -875,8 +923,9 @@ EXTERN_C BOOL __stdcall EraCreateDirectoryA(LPCSTR lpPathName, LPSECURITY_ATTRIB
 
 EXTERN_C BOOL __stdcall EraCreateDirectoryW(LPCWSTR lpPathName, LPSECURITY_ATTRIBUTES lpSecurityAttributes)
 {
-    FixRelativePath(lpPathName);
-    BOOL Result = TrueCreateDirectoryW(lpPathName, lpSecurityAttributes);
+    LPCWSTR PathName = lpPathName;
+    FixRelativePath(PathName);
+    BOOL Result = TrueCreateDirectoryW(PathName, lpSecurityAttributes);
 
     return Result;
 }
@@ -930,16 +979,38 @@ EXTERN_C HMODULE __stdcall EraLoadLibraryW(LPCWSTR lpLibFileName)
 
 EXTERN_C DWORD __stdcall EraGetFileAttributesW(LPCWSTR lpFileName)
 {
-    FixRelativePath(lpFileName);
-    return TrueGetFileAttributesW(lpFileName);
+    LPCWSTR FileName = lpFileName;
+    FixRelativePath(FileName);
+    DWORD Result = TrueGetFileAttributesW(FileName);
+
+    if (Result == INVALID_FILE_ATTRIBUTES)
+    {
+        return FILE_ATTRIBUTE_DIRECTORY;
+    }
+
+    return Result;
 }
 
 EXTERN_C BOOL __stdcall EraGetFileAttributesExW(LPCWSTR lpFileName, GET_FILEEX_INFO_LEVELS fInfoLevelId,
                                                 LPVOID lpFileInformation)
 {
-    FixRelativePath(lpFileName);
-    return TrueGetFileAttributesExW(lpFileName, fInfoLevelId, lpFileInformation);
+    LPCWSTR FileName = lpFileName;
+    FixRelativePath(FileName);
+    return TrueGetFileAttributesExW(FileName, fInfoLevelId, lpFileInformation);
 }
+
+EXTERN_C BOOL __stdcall EraGetFileAttributesExA(LPCSTR lpFileName, GET_FILEEX_INFO_LEVELS fInfoLevelId,
+                                                LPVOID lpFileInformation)
+{
+    USES_CONVERSION;
+    LPCWSTR FileName = A2W(lpFileName);
+    FixRelativePath(FileName);
+    
+    BOOL Result = TrueGetFileAttributesExW(FileName, fInfoLevelId, lpFileInformation);
+
+    return Result;
+}
+
 EXTERN_C DWORD __stdcall EraGetFileAttributesA(LPCSTR lpFileName)
 {
     USES_CONVERSION;
@@ -953,20 +1024,23 @@ EXTERN_C DWORD __stdcall EraGetFileAttributesA(LPCSTR lpFileName)
 
 EXTERN_C HANDLE __stdcall EraFindFirstFileW(LPCWSTR lpFileName, LPWIN32_FIND_DATAW lpFindFileData)
 {
-    FixRelativePath(lpFileName);
-    return TrueFindFirstFileW(lpFileName, lpFindFileData);
+    LPCWSTR FileName = lpFileName;
+    FixRelativePath(FileName);
+    return TrueFindFirstFileW(FileName, lpFindFileData);
 }
 
 EXTERN_C BOOL __stdcall EraDeleteFileW(LPCWSTR lpFileName)
 {
-    FixRelativePath(lpFileName);
-    return TrueDeleteFileW(lpFileName);
+    LPCWSTR FileName = lpFileName;
+    FixRelativePath(FileName);
+    return TrueDeleteFileW(FileName);
 }
 
 EXTERN_C HMODULE __stdcall EraLoadLibraryExW(LPCWSTR lpLibFileName, HANDLE hFile, DWORD dwFlags)
 {
-    FixRelativePath(lpLibFileName);
-    return TrueLoadLibraryExW(lpLibFileName, hFile, dwFlags);
+    LPCWSTR FileName = lpLibFileName;
+    FixRelativePath(FileName);
+    return TrueLoadLibraryExW(FileName, hFile, dwFlags);
 }
 
 EXTERN_C BOOL __stdcall EraSetFileAttributesA(LPCSTR lpFileName, DWORD dwFileAttributes)
@@ -1018,7 +1092,9 @@ EXTERN_C BOOL __stdcall EraGetFileInformationByHandleEx(HANDLE hFile, FILE_INFO_
 
 EXTERN_C BOOL __stdcall EraReadFile(HANDLE hFile, LPVOID lpBuffer, DWORD nNumberOfBytesToRead, LPDWORD lpNumberOfBytesRead, LPOVERLAPPED lpOverlapped)
 {
-    return TrueReadFile(hFile, lpBuffer, nNumberOfBytesToRead, lpNumberOfBytesRead, lpOverlapped);
+    BOOL Result = TrueReadFile(hFile, lpBuffer, nNumberOfBytesToRead, lpNumberOfBytesRead, lpOverlapped);
+
+    return Result;
 }
 
 EXTERN_C BOOL __stdcall EraWriteFile(HANDLE hFile, LPCVOID lpBuffer, DWORD nNumberOfBytesToWrite, LPDWORD lpNumberOfBytesWritten, LPOVERLAPPED lpOverlapped)

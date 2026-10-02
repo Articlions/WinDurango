@@ -14,30 +14,30 @@ static ID3D11DeviceContext2 *pCtx2 = nullptr;
 
 struct ID3D11Runtime
 {
-    virtual HRESULT CreateDevice(void **ppDevice, void **ppContext) = 0;
+    virtual HRESULT CreateDevice(void **ppDevice, void **ppContext, D3D_FEATURE_LEVEL *pFeatureLevel) = 0;
     virtual HRESULT CreateSwapChain(void **ppSwapChain, void* pDevice, const DXGI_SWAP_CHAIN_DESC1* pSwapChainDesc) = 0;
 };
 
 template <abi_t ABI> struct D3D11Runtime : public ID3D11Runtime
 {
-    HRESULT CreateDevice(void **ppDevice, void **ppContext) override
+    HRESULT CreateDevice(void **ppDevice, void **ppContext, D3D_FEATURE_LEVEL *pFeatureLevel) override
     {
         ID3D11Device *pDevice = nullptr;
         ID3D11DeviceContext *pContext = nullptr;
 
         D3D_FEATURE_LEVEL FeatureLevels[] = {D3D_FEATURE_LEVEL_11_1, D3D_FEATURE_LEVEL_11_0};
-        UINT Flags = D3D11_CREATE_DEVICE_BGRA_SUPPORT | D3D11_CREATE_DEVICE_DISABLE_GPU_TIMEOUT;
+        UINT Flags = D3D11_CREATE_DEVICE_BGRA_SUPPORT;
         #ifdef _DEBUG
             Flags |= D3D11_CREATE_DEVICE_DEBUG;
         #endif
 
         auto hr = D3D11CreateDevice(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, Flags, FeatureLevels, 2, D3D11_SDK_VERSION,
-                                    &pDevice, nullptr, &pContext);
+                                    &pDevice, pFeatureLevel, &pContext);
 
         if (FAILED(hr))
         {
             hr = D3D11CreateDevice(nullptr, D3D_DRIVER_TYPE_WARP, nullptr, Flags, FeatureLevels, 2, D3D11_SDK_VERSION,
-                                    &pDevice, nullptr, &pContext);
+                                    &pDevice, pFeatureLevel, &pContext);
             if (FAILED(hr))
             {
                 MessageBoxA(nullptr, "Failed to create the D3D11 Device!", "Error!", MB_OK);
@@ -153,7 +153,6 @@ template <abi_t ABI> struct DXGIXPresentArrayHelper : public IDXGIXPresentArrayH
             SwapChain->Present(SyncInterval, 0);
         }
     }
-
 };
 
 static IDXGIXPresentArrayHelper *g_PresentArrayHelper = nullptr;

@@ -12,26 +12,24 @@ LONG D3D11GraphicsMemoryManager<ABI>::VectoredExceptionHandler(_EXCEPTION_POINTE
         if (pExceptionPointers->ExceptionRecord->ExceptionInformation[0] == 1)
         {
             MEMORY_BASIC_INFORMATION mbi{};
-            SIZE_T Result = VirtualQuery((void*)pExceptionPointers->ExceptionRecord->ExceptionInformation[1], &mbi, sizeof(mbi));
+            void *Address = (void*)pExceptionPointers->ExceptionRecord->ExceptionInformation[1];
+            SIZE_T Result = VirtualQuery(Address, &mbi, sizeof(mbi));
             if (mbi.AllocationBase && Result == sizeof(mbi))
             {
-                if (g_ResourceMap.size() > 0)
+                std::lock_guard lock(g_ResourceMapMutex);
+                auto Range = g_ResourceMap.equal_range(mbi.AllocationBase);
+                for (auto it = Range.first; it != Range.second; ++it)
                 {
-                    std::lock_guard<std::mutex> lock(g_ResourceMapMutex);
-                    auto Range = g_ResourceMap.equal_range(mbi.AllocationBase);
-                    for (auto it = Range.first; it != Range.second; ++it)
-                    {
-                        D3D11_RESOURCE_DIMENSION Type{};
-                        reinterpret_cast<gfx::ID3D11Resource<ABI>*>(it->second)->GetType(&Type);
-                        if (Type == D3D11_RESOURCE_DIMENSION_BUFFER) reinterpret_cast<D3D11Buffer<ABI>*>(it->second)->m_IsDirty = true;
-                        else if (Type == D3D11_RESOURCE_DIMENSION_TEXTURE1D) reinterpret_cast<D3D11Texture1D<ABI>*>(it->second)->m_IsDirty = true;
-                        else if (Type == D3D11_RESOURCE_DIMENSION_TEXTURE2D) reinterpret_cast<D3D11Texture2D<ABI>*>(it->second)->m_IsDirty = true;
-                        else if (Type == D3D11_RESOURCE_DIMENSION_TEXTURE3D) reinterpret_cast<D3D11Texture3D<ABI>*>(it->second)->m_IsDirty = true;
-                    }
+                    D3D11_RESOURCE_DIMENSION Type{};
+                    static_cast<gfx::ID3D11Resource<ABI>*>(it->second)->GetType(&Type);
+                    if (Type == D3D11_RESOURCE_DIMENSION_BUFFER) static_cast<D3D11Buffer<ABI>*>(it->second)->m_IsDirty = true;
+                    else if (Type == D3D11_RESOURCE_DIMENSION_TEXTURE1D) static_cast<D3D11Texture1D<ABI>*>(it->second)->m_IsDirty = true;
+                    else if (Type == D3D11_RESOURCE_DIMENSION_TEXTURE2D) static_cast<D3D11Texture2D<ABI>*>(it->second)->m_IsDirty = true;
+                    else if (Type == D3D11_RESOURCE_DIMENSION_TEXTURE3D) static_cast<D3D11Texture3D<ABI>*>(it->second)->m_IsDirty = true;
                 }
 
                 DWORD LastFlProtect = 0;
-                VirtualProtect((void*)pExceptionPointers->ExceptionRecord->ExceptionInformation[1], 1, PAGE_READWRITE, &LastFlProtect);
+                VirtualProtect(Address, 1, PAGE_READWRITE, &LastFlProtect);
                 return EXCEPTION_CONTINUE_EXECUTION;
             }
 

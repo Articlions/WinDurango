@@ -34,7 +34,7 @@ namespace winrt::Windows::Xbox::System::implementation
         {
             a_users = winrt::single_threaded_vector<winrt::Windows::Xbox::System::User>();
 
-            for (size_t i = 0; i < 4; i++)
+            for (size_t i = 0; i < 4; i++) //user index starts at 1?
             {
                 p_wd->log.Log("WinDurango::WinRT::Windows::Xbox::System", "Creating user");
                 winrt::Windows::Xbox::System::User user = winrt::make<User>(i);

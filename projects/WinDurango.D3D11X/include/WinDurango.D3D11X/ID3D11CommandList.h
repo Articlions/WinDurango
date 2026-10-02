@@ -5,6 +5,8 @@
 
 enum class DrawBundlesCommandType
 {
+    OMSetBlendState,
+    PSSetSamplers,
     DSSetShader,
     HSSetShader,
     GSSetShader,
@@ -13,8 +15,12 @@ enum class DrawBundlesCommandType
     CSSetShader,
     VSSetFastConstantBuffer,
     PSSetFastConstantBuffer,
+    VSSetPlacementConstantBuffer,
+    PSSetPlacementConstantBuffer,
     VSSetFastShaderResource,
     PSSetFastShaderResource,
+    VSSetPlacementShaderResource,
+    PSSetPlacementShaderResource,
     HSSetFastSampler,
     DSSetFastSampler,
     GSSetFastSampler,
@@ -38,6 +44,23 @@ enum class DrawBundlesCommandType
     DrawIndexedInstancedIndirect,
     Draw,
     ClearState,
+    ClearRenderTargetViewX,
+};
+
+template <abi_t ABI>
+struct OMSetBlendStateCommand
+{
+    gfx::ID3D11BlendState<ABI>* pBlendState;
+    FLOAT const* BlendFactor;
+    UINT SampleMask;
+};
+
+template <abi_t ABI>
+struct PSSetSamplersCommand
+{
+    UINT StartSlot;
+    UINT NumSamplers;
+    gfx::ID3D11SamplerState<ABI>* const* ppSamplers;
 };
 
 template <abi_t ABI>
@@ -270,12 +293,54 @@ struct ClearStateCommand
 };
 
 template <abi_t ABI>
+struct PSSetPlacementShaderResourceCommand
+{
+    UINT Slot;
+    gfx::ID3D11ShaderResourceView<ABI>* pShaderResourceView;
+    void* pBaseAddress;
+};
+
+template <abi_t ABI>
+struct VSSetPlacementShaderResourceCommand
+{
+    UINT Slot;
+    gfx::ID3D11ShaderResourceView<ABI>* pShaderResourceView;
+    void* pBaseAddress;
+};
+
+template <abi_t ABI>
+struct VSSetPlacementConstantBufferCommand
+{
+    UINT Slot;
+    gfx::ID3D11Buffer<ABI>* pConstantBuffer;
+    void* pBaseAddress;
+};
+
+template <abi_t ABI>
+struct PSSetPlacementConstantBufferCommand
+{
+    UINT Slot;
+    gfx::ID3D11Buffer<ABI>* pConstantBuffer;
+    void* pBaseAddress;
+};
+
+template <abi_t ABI>
+struct ClearRenderTargetViewXCommand
+{
+    gfx::ID3D11RenderTargetView<ABI>* pRenderTargetView;
+    UINT Flags;
+    FLOAT const* ColorRGBA;
+};
+
+template <abi_t ABI>
 struct DrawBundlesCommand
 {
 public:
 
     union
     {
+        OMSetBlendStateCommand<ABI> OMSetBlendState;
+        PSSetSamplersCommand<ABI> PSSetSamplers;
         DSSetShaderCommand<ABI> DSSetShader;
         HSSetShaderCommand<ABI> HSSetShader;
         GSSetShaderCommand<ABI> GSSetShader;
@@ -286,6 +351,10 @@ public:
         PSSetFastConstantBufferCommand<ABI> PSSetFastConstantBuffer;
         VSSetFastShaderResourceCommand<ABI> VSSetFastShaderResource;
         PSSetFastShaderResourceCommand<ABI> PSSetFastShaderResource;
+        VSSetPlacementConstantBufferCommand<ABI> VSSetPlacementConstantBuffer;
+        PSSetPlacementConstantBufferCommand<ABI> PSSetPlacementConstantBuffer;
+        VSSetPlacementShaderResourceCommand<ABI> VSSetPlacementShaderResource;
+        PSSetPlacementShaderResourceCommand<ABI> PSSetPlacementShaderResource;
         DSSetFastSamplerCommand<ABI> DSSetFastSampler;
         HSSetFastSamplerCommand<ABI> HSSetFastSampler;
         GSSetFastSamplerCommand<ABI> GSSetFastSampler;
@@ -309,6 +378,7 @@ public:
         DrawIndexedInstancedIndirectCommand<ABI> DrawIndexedInstancedIndirect;
         DrawCommand Draw;
         ClearStateCommand ClearState;
+        ClearRenderTargetViewXCommand<ABI> ClearRenderTargetViewX;
     };
 
     DrawBundlesCommandType m_CommandType;
@@ -320,7 +390,9 @@ class D3D11CommandList : public gfx::ID3D11CommandList<ABI>
 public:
     ID3D11CommandList* m_pFunction = nullptr;
     BOOL m_IsDrawBundle = FALSE;
+    BOOL m_RestoreDeferredContextState = FALSE;
     std::vector<DrawBundlesCommand<ABI>> m_Commands;
+    UINT m_Flags = 0;
 
     D3D11CommandList(ID3D11CommandList* CmdList)
     {
@@ -328,10 +400,12 @@ public:
         m_IsDrawBundle = FALSE;
         InterlockedIncrement(&this->m_RefCount);
     }
-    D3D11CommandList(std::vector<DrawBundlesCommand<ABI>> Commands)
+    D3D11CommandList(std::vector<DrawBundlesCommand<ABI>> Commands, BOOL RestoreDeferredContextState, UINT Flags)
     {
-        m_Commands = Commands;
+        m_Commands = std::move(Commands);
         m_IsDrawBundle = TRUE;
+        m_RestoreDeferredContextState = RestoreDeferredContextState;
+        m_Flags = Flags;
         InterlockedIncrement(&this->m_RefCount);
     }
 

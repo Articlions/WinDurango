@@ -17,9 +17,7 @@ EXTERN_C HRESULT __stdcall EraD3D11CreateDevice(void *pAdapter, D3D_DRIVER_TYPE 
 {
     ID3D11Runtime *pRuntime;
     d3d11CreateInstance<D3D11Runtime>(g_ABI, (void **)&pRuntime);
-    auto hr = pRuntime->CreateDevice((void **)ppDevice, (void **)ppImmediateContext);
-    if (pFeatureLevel)
-        (*pFeatureLevel) = D3D_FEATURE_LEVEL_11_0;
+    auto hr = pRuntime->CreateDevice((void **)ppDevice, (void **)ppImmediateContext, pFeatureLevel);
     return hr;
 }
 
@@ -47,7 +45,7 @@ EXTERN_C HRESULT __stdcall D3D11XCreateDeviceX(const D3D11X_CREATE_DEVICE_PARAME
 {
     ID3D11Runtime *pRuntime;
     d3d11CreateInstance<D3D11Runtime>(g_ABI, (void **)&pRuntime);
-    auto hr = pRuntime->CreateDevice((void **)ppDevice, (void **)ppImmediateContext);
+    auto hr = pRuntime->CreateDevice((void **)ppDevice, (void **)ppImmediateContext, nullptr);
     return hr;
 }
 
@@ -58,7 +56,7 @@ EXTERN_C HRESULT __stdcall D3D11XCreateDeviceXAndSwapChain1(const D3D11X_CREATE_
 {
     ID3D11Runtime *pRuntime;
     d3d11CreateInstance<D3D11Runtime>(g_ABI, (void **)&pRuntime);
-    auto hr = pRuntime->CreateDevice((void **)ppDevice, (void **)ppImmediateContext);
+    auto hr = pRuntime->CreateDevice((void **)ppDevice, (void **)ppImmediateContext, nullptr);
     if (FAILED(hr))
         return hr;
 

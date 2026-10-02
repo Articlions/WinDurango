@@ -1,6 +1,7 @@
 #include "Windows.Xbox.System.UserDisplayInfo.h"
 #include "WinDurangoWinRT.h"
 #include <winrt/windows.foundation.collections.h>
+#include "Windows.Xbox.System.GetPictureResult.h"
 
 namespace winrt::Windows::Xbox::System::implementation
 {
@@ -54,7 +55,6 @@ namespace winrt::Windows::Xbox::System::implementation
 
     winrt::Windows::Foundation::IAsyncOperation<winrt::Windows::Xbox::System::GetPictureResult> UserDisplayInfo::GetGamerPictureAsync(winrt::Windows::Xbox::System::UserPictureSize unk, winrt::Windows::Storage::Streams::IBuffer unka)
     {
-        p_wd->log.Warn("WinDurango::WinRT::Windows::Xbox::System", "Unimplemented: GetGamerPictureAsync");
-        throw hresult_not_implemented();
+        co_return winrt::make<implementation::GetPictureResult>(unk, unka);
     }
 }

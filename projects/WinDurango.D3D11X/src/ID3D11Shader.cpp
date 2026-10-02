@@ -95,8 +95,7 @@ template <abi_t ABI> ULONG D3D11PixelShader<ABI>::Release()
 {
     m_pFunction->Release();
     ULONG RefCount = InterlockedDecrement(&this->m_RefCount);
-    if (!RefCount)
-        delete this;
+    if (!RefCount) delete this;
     return RefCount;
 }
 
@@ -163,8 +162,7 @@ template <abi_t ABI> ULONG D3D11ComputeShader<ABI>::Release()
 {
     m_pFunction->Release();
     ULONG RefCount = InterlockedDecrement(&this->m_RefCount);
-    if (!RefCount)
-        delete this;
+    if (!RefCount) delete this;
     return RefCount;
 }
 
@@ -232,8 +230,7 @@ template <abi_t ABI> ULONG D3D11GeometryShader<ABI>::Release()
 {
     m_pFunction->Release();
     ULONG RefCount = InterlockedDecrement(&this->m_RefCount);
-    if (!RefCount)
-        delete this;
+    if (!RefCount) delete this;
     return RefCount;
 }
 
@@ -300,8 +297,7 @@ template <abi_t ABI> ULONG D3D11HullShader<ABI>::AddRef()
 template <abi_t ABI> ULONG D3D11HullShader<ABI>::Release()
 {
     ULONG RefCount = InterlockedDecrement(&this->m_RefCount);
-    if (!RefCount)
-        delete this;
+    if (!RefCount) delete this;
     return RefCount;
 }
 
@@ -368,8 +364,7 @@ template <abi_t ABI> ULONG D3D11DomainShader<ABI>::Release()
 {
     m_pFunction->Release();
     ULONG RefCount = InterlockedDecrement(&this->m_RefCount);
-    if (!RefCount)
-        delete this;
+    if (!RefCount) delete this;
     return RefCount;
 }
 
@@ -436,8 +431,7 @@ template <abi_t ABI> ULONG D3D11InputLayout<ABI>::Release()
 {
     m_pFunction->Release();
     ULONG RefCount = InterlockedDecrement(&this->m_RefCount);
-    if (!RefCount)
-        delete this;
+    if (!RefCount) delete this;
     return RefCount;
 }
 

@@ -6,6 +6,13 @@
     "detours",
     "directxtex",
     "kinectsdk2",
-    "zlib"
+    "zlib",
+    {
+      "name": "ffmpeg",
+      "default-features": false,
+      "features": [
+        "avcodec"
+      ]
+    }
   ]
 }

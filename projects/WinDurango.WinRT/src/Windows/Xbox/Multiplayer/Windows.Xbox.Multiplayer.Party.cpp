@@ -176,8 +176,7 @@ namespace winrt::Windows::Xbox::Multiplayer::implementation
     }
     hstring Party::PartyId()
     {
-        p_wd->log.Warn("WinDurango::WinRT::Windows::Xbox::Multiplayer", "Unimplemented: PartyId");
-        throw hresult_not_implemented();
+        return L"0";
     }
     winrt::Windows::Foundation::IAsyncAction Party::DisassociateGameSessionAsync(winrt::Windows::Xbox::System::User actingUser, winrt::Windows::Xbox::Multiplayer::MultiplayerSessionReference sessionReferenceToDisassociate)
     {

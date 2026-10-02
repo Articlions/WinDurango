@@ -1,0 +1,260 @@
+import "Windows.Xbox.System.idl";
+
+namespace Windows.Xbox.Media.Capture
+{
+    enum ApplicationClipStreamType
+    {
+        None = 0x0,
+        Original = 0x1,
+        Stream = 0x2,
+        Download = 0x3,
+        Ahls = 0x4,
+    };
+
+    enum ApplicationClipStorageType
+    {
+        Local = 0x1,
+        Cloud = 0x2,
+    };
+
+    enum ApplicationClipThumbnailType
+    {
+        Small = 0x1,
+        Large = 0x2,
+    };
+
+    enum ApplicationClipVisibility
+    {
+        None = 0x0,
+        Default = 0x1,
+        Owner = 0x2,
+        Title = 0x3,
+        Public = 0x4,
+    };
+
+    enum ApplicationClipError
+    {
+        ServiceNotRunning = -2110640127,
+        OutOfSpace = -2110640126,
+        NullRecordInfo = -2110640125,
+        HitRecordLimit = -2110640124,
+        ResponseTooBig = -2110640123,
+        RecordingNotExists = -2110640122,
+        NoStopRecord = -2110640121,
+        AsyncFailed = -2110640120,
+        UpdateOnLocalClip = -2110640119,
+        NoneRecorded = -2110640118,
+        NoMoreFrame = -2110640117,
+        NoFrameToRecord = -2110640116,
+        InvalidPlatformData = -2110640115,
+        BadStartTime = -2110640114,
+        BadDuration = -2110640113,
+        NotAuthorized = -2110640112,
+        NothingToUpdate = -2110640111,
+        DisabledPeriod = -2110640110,
+        BadStartRecordState = -2110640109,
+        BadStopRecordState = -2110640108,
+        BadRecordTimespanState = -2110640107,
+        UploadPending = -2110640106,
+        BadGameCredential = -2110640105,
+        GameDVRBlocked = -2110640104,
+        IsLocalClip = -2110640103,
+        IsGuestUser = -2110640102,
+        BroadcastInProgress = -2110640101,
+    };
+
+    [flags]
+    enum ClipContents
+    {
+        None = 0x0,
+        UserGeneratedAudio = 0x1,
+        UserGeneratedVideo = 0x2,
+    };
+
+    [uuid(9dc699d3-db64-4fa5-a8b9-6b532aa69b8d)]
+    [version(1)] //Just so the compiler doesn't complain
+    interface IApplicationClipBaseEventData
+    {
+    }
+
+    [interface_name("IDiagnosticCapture", 8b98ea24-ca3d-4789-9c67-cec2e02e8a08)]
+	runtimeclass DiagnosticCapture
+    {
+        [static_name("IDiagnosticCaptureStatics", 39f20721-379c-4255-b558-c133e3359857)]
+        {
+            static Windows.Foundation.IAsyncOperation<TemporaryClip> RecordTemporaryClipAsync(Windows.Foundation.DateTime startTime, Windows.Foundation.TimeSpan duration);
+        }
+    }
+
+    runtimeclass ApplicationClipInfo
+    {
+        [constructor_name("IApplicationClipInfoFactory", 509ccd19-fee4-45ab-8daa-7895328d452f)]
+        {
+            ApplicationClipInfo(String greatestMomentId);
+        }
+
+        [interface_name("IApplicationClipInfo", 13334140-c8b3-4e1a-8860-a8533918c814)]
+        {
+            String GreatestMomentId { get; set; };
+            Windows.Foundation.Collections.IVectorView<Windows.Xbox.System.User> AdditionalUsers { get; set; };
+            String MultiplayerCorrelationId { get; set; };
+            Windows.Foundation.DateTime ThumbnailTimestamp { get; set; };
+            String TitleData { get; set; };
+            IApplicationClipBaseEventData EventData { get; set; };
+            String LocalizedClipName { get; set; };
+        }
+    }
+
+    runtimeclass ApplicationClip
+    {
+        [static_name("IApplicationClipStatics", c0c846ba-0d69-4b4b-ac8b-dba211322f1d)]
+        {
+            static Windows.Foundation.IAsyncAction UpdateClipMetadataAsync(Windows.Xbox.System.User user, String serviceConfigId, String cloudId, String localId, ApplicationClipUpdateMetadataInfo updateInfo);
+            static Windows.Foundation.IAsyncAction DeleteClipAsync(Windows.Xbox.System.User user, String serviceConfigId, String cloudId, String localId);
+        }
+
+        [interface_name("IApplicationClip", 02755691-e987-4505-89f0-4a26e6e4351d)]
+        {
+            String LocalId { get; };
+            String CloudId { get; };
+            String ServiceConfigId { get; };
+            String OwnerXboxUserId { get; };
+            String ClipName { get; };
+            String GreatestMomentId { get; };
+            Windows.Foundation.Collections.IVectorView<ApplicationClipLocation> Locations { get; };
+            Windows.Foundation.DateTime DateRecorded { get; };
+            Windows.Foundation.TimeSpan Duration { get; };
+            String MultiplayerCorrelationId { get; };
+            String TitleData { get; };
+            String UserCaption { get; };
+            Double Rating { get; };
+            UInt32 RatingCount { get; };
+            UInt32 Views { get; };
+            Boolean SavedByUser { get; };
+            ApplicationClipVisibility Visibility { get; };
+            Windows.Foundation.Uri GetCloudThumbnail(ApplicationClipThumbnailType thumbnailType);
+            Windows.Foundation.IAsyncAction UpdateMetadataAsync(Windows.Xbox.System.User user, ApplicationClipUpdateMetadataInfo updateInfo);
+            Windows.Foundation.IAsyncAction DeleteAsync(Windows.Xbox.System.User user);
+            String TitleId { get; };
+            String AchievementId { get; };
+            String Locale { get; };
+            String TitleName { get; };
+        }
+
+        [interface_name("IApplicationClip2", 093db0a4-cd38-4a14-b4e7-78206ad13a68)]
+        {
+            ClipContentAttributes ClipContentAttributes { get; };
+        }
+    }
+
+    runtimeclass ApplicationClipCapture
+    {
+        ApplicationClipCapture();
+
+        [static_name("IApplicationClipCaptureStatics", 82845b56-3150-4058-947a-b567537de0c2)]
+        {
+            static Windows.Foundation.IAsyncAction DisableRecordAsync();
+            static Windows.Foundation.IAsyncAction EnableRecordAsync();
+        }
+
+        [static_name("IApplicationClipCaptureStatics2", 2ac83090-107a-4cd7-8376-5188d3fcfa4e)]
+        {
+            static ClipContentAttributes ClipContentAttributes { get; set; };
+        }
+
+        [interface_name("IApplicationClipCapture", dcd7c675-e80d-4a81-ac81-b02087b18013)]
+        {
+            Windows.Foundation.IAsyncAction StartRecordAsync(Windows.Xbox.System.User owner);
+            Windows.Foundation.IAsyncOperationWithProgress<ApplicationClip, ApplicationClip> StopRecordAsync(ApplicationClipInfo clipInfo);
+            Windows.Foundation.IAsyncOperationWithProgress<ApplicationClip, ApplicationClip> RecordTimespanAsync(Windows.Xbox.System.User owner, ApplicationClipInfo clipInfo, Windows.Foundation.DateTime start, Windows.Foundation.DateTime end);
+            void CancelRecord();
+            event Windows.Foundation.TypedEventHandler<ApplicationClipCapture, ApplicationClipCaptureFailedEventArgs> Failed;
+            event Windows.Foundation.TypedEventHandler<ApplicationClipCapture, Object> RecordLimitationExceeded;
+        }
+    }
+
+    [interface_name("IApplicationClipCaptureFailedEventArgs", b942aa55-1c09-4c9a-9078-850a512ec757)]
+    runtimeclass ApplicationClipCaptureFailedEventArgs
+    {
+        UInt32 Code { get; };
+        String Message { get; };
+    }
+
+    [interface_name("IClipContentAttributes", da98b06a-7f99-461f-8d8d-fcc3c19b7701)]
+    runtimeclass ClipContentAttributes
+    {
+        ClipContentAttributes();
+        ClipContents ClipContents { get; set; };
+    }
+
+    [interface_name("IApplicationClipUpdateMetadataInfo", f99bc2fe-9c96-48c4-be13-4f556a5c471a)]
+    runtimeclass ApplicationClipUpdateMetadataInfo
+    {
+        ApplicationClipUpdateMetadataInfo();
+        String UserCaption { get; set; };
+        String TitleData { get; set; };
+        UInt32 UpdatedFields { get; };
+    }
+
+    [interface_name("IApplicationClipLocation", fdd0865c-3a91-44b0-a4b9-368afa8a7c04)]
+    runtimeclass ApplicationClipLocation
+    {
+        Windows.Foundation.Uri Uri { get; };
+        UInt64 FileSize { get; };
+        ApplicationClipStreamType StreamType { get; };
+        ApplicationClipStorageType StorageType { get; };
+        Windows.Foundation.DateTime Expiration { get; };
+    }
+
+    [interface_name("ITemporaryClip", e24a53bf-8ff5-4ee8-935c-644bc171942e)]
+    runtimeclass TemporaryClip
+    {
+        Windows.Foundation.DateTime DateRecorded { get; };
+        Windows.Foundation.TimeSpan Duration { get; };
+        String SystemOSPath { get; };
+    }
+
+    runtimeclass ApplicationClipEventData : IApplicationClipBaseEventData
+    {
+        ApplicationClipEventData();
+
+        [interface_name("IApplicationClipEventData", 4d5fc7fa-98ee-49e8-8f08-d373f36ec0bd)]
+        {
+            Int32 SectionId { get; set; };
+            String PlayerSessionId { get; set; };
+            Int32 GameplayMode { get; set; };
+            Int32 DifficultyLevelId { get; set; };
+            Int32 ObjectiveId { get; set; };
+            Int32 ExitStatusId { get; set; };
+            Single LocationX { get; set; };
+            Single LocationY { get; set; };
+            Single LocationZ { get; set; };
+        }
+    }
+
+    runtimeclass ApplicationClipQuery
+    {
+        ApplicationClipQuery();
+
+        [interface_name("IApplicationClipQuery", d340c8bd-cf53-4b5b-903f-c0e3a93a481b)]
+        {
+            Windows.Foundation.IAsyncOperation<Windows.Foundation.Collections.IVectorView<ApplicationClip> > GetClipsAsync(Windows.Xbox.System.User owner);
+            Windows.Foundation.IAsyncOperation<Windows.Foundation.Collections.IVectorView<ApplicationClip> > GetClipsForServiceConfigurationAsync(Windows.Xbox.System.User owner, String serviceConfigId);
+            Windows.Foundation.IAsyncOperation<Windows.Foundation.Collections.IVectorView<ApplicationClip> > GetNextClipsAsync();
+        }
+
+        [interface_name("IApplicationClipQuery2", c2d95416-127e-4342-b433-d95e7dc31baa)]
+        {
+            Windows.Foundation.IAsyncOperation<Windows.Foundation.Collections.IVectorView<ApplicationClip> > GetClipsForUserAsync(Windows.Xbox.System.User requester, String targetXboxUserId);
+        }
+    }
+
+    [interface_name("IBroadcastEventArgs", 4cff3c18-c81f-48eb-a721-922a998bf42a)]
+    runtimeclass BroadcastEventArgs
+    {
+        UInt64 State { get; };
+        UInt64 IntParam { get; };
+        String StringParam { get; };
+        UInt64 Event { get; };
+    }
+}

@@ -37,7 +37,8 @@ struct ID3D11BackgroundContext : IUnknown
 template <abi_t ABI> class D3D11DeviceContextX : public gfx::ID3D11DeviceContextX<ABI>
 {
 public:
-    ID3D11DeviceContext2 *m_pFunction;
+    ID3D11DeviceContext2 *m_pFunction = nullptr;
+    gfx::ID3D11DeviceX<ABI> *m_pDevice = nullptr;
 
     D3D11DeviceContextX(ID3D11DeviceContext2 *pContext)
     {
@@ -88,9 +89,12 @@ public:
     void ExecuteBackgroundContexts();
     void AddBackgroundContext(ID3D11BackgroundContext *pContext);
     void RemoveBackgroundContext(ID3D11BackgroundContext *pContext);
-    void UpdateShaderResources(gfx::ID3D11ShaderResourceView<ABI> **ppSRVs);
-    void UpdateUnorderedAccessViews(gfx::ID3D11UnorderedAccessView<ABI> **ppUAVs);
-    void UpdateConstantBuffers(gfx::ID3D11Buffer<ABI> **ppBuffers);
+    void UpdateShaderResources(gfx::ID3D11ShaderResourceView<ABI> **ppSRVs, UINT i);
+    void UpdateShaderResources();
+    void UpdateUnorderedAccessViews(gfx::ID3D11UnorderedAccessView<ABI> **ppUAVs, UINT i);
+    void UpdateUnorderedAccessViews();
+    void UpdateConstantBuffers(gfx::ID3D11Buffer<ABI> **ppBuffers, UINT i);
+    void UpdateConstantBuffers();
     void UpdateVertexBuffers(gfx::ID3D11Buffer<ABI> **ppBuffers);
     void UpdateIndexBuffer(gfx::ID3D11Buffer<ABI> *pBuffers);
     void ExecuteDrawBundles(gfx::ID3D11CommandList<ABI> *pCommandList);

@@ -422,7 +422,7 @@ HRESULT DetileTexture2D(UINT TileModeIndex, D3D11_TEXTURE2D_DESC* pDesc, void* p
     desc.BindFlags = pDesc->BindFlags;
     desc.CPUAccessFlags = pDesc->CPUAccessFlags;
     desc.Format = (XG_FORMAT)pDesc->Format;
-    desc.MipLevels = 1;
+    desc.MipLevels = pDesc->MipLevels;
     desc.MiscFlags = pDesc->MiscFlags;
     desc.TileMode = (XG_TILE_MODE)TileModeIndex;
     desc.Height = pDesc->Height;

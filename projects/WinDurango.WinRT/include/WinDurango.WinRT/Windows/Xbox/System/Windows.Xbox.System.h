@@ -31,18 +31,6 @@ namespace winrt::Windows::Xbox::System::implementation
         winrt::Windows::Xbox::System::UserOnlineState state = winrt::Windows::Xbox::System::UserOnlineState::Offline;
     };
 
-    struct GetPictureResult : GetPictureResultT<GetPictureResult>
-    {
-        GetPictureResult() = default;
-        GetPictureResult(winrt::hresult result, uint32_t requiredBufferSize) : result(result), bufferSize(requiredBufferSize) {}
-
-        winrt::hresult Result();
-        uint32_t RequiredBufferSize();
-    private:
-        winrt::hresult result = 0;
-        uint32_t bufferSize = 0;
-    };
-
     struct SignInCompletedEventArgs : SignInCompletedEventArgsT<SignInCompletedEventArgs>
     {
         SignInCompletedEventArgs() = default;

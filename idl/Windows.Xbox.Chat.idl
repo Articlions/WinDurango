@@ -173,7 +173,7 @@ namespace Windows.Xbox.Chat
 
         [interface_name("IChatSession", 9af8480a-16a5-4905-ac0a-5514f3427893)]
         {
-            Windows.Foundation.Collections.IVectorView<ChatChannel> Channels { get; };
+            Windows.Foundation.Collections.IVector<ChatChannel> Channels { get; };
             event ChatSessionStateChangedHandler StateChangedEvent;
             Windows.Foundation.IAsyncOperation<ChatSessionState> GetStateAsync();
         }

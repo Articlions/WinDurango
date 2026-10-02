@@ -19,6 +19,7 @@ template <abi_t ABI> HRESULT D3D11Resource<ABI>::QueryInterface(REFIID riid, voi
         if (SUCCEEDED(hr))
         {
             *ppvObject = new D3D11Texture2D<ABI>(pTex2D);
+            AddRef();
             return S_OK;
         }
         else
@@ -41,27 +42,28 @@ template <abi_t ABI> ULONG D3D11Resource<ABI>::AddRef()
 
 template <abi_t ABI> ULONG D3D11Resource<ABI>::Release()
 {
-    std::lock_guard PlacementUpdateLock(g_ResourceMapMutex);
     m_pFunction->Release();
     ULONG RefCount = InterlockedDecrement(&this->m_RefCount);
     if (!RefCount)
     {
-        void* AllocationBase = nullptr;
-        MEMORY_BASIC_INFORMATION mbi{};
-        SIZE_T Result = VirtualQuery(this->m_pAllocationStart, &mbi, sizeof(mbi));
-        if (mbi.AllocationBase && Result == sizeof(mbi))
+        auto it = g_AllocationBaseMap.find(this);
+        if (it != g_AllocationBaseMap.end())
         {
-            AllocationBase = mbi.AllocationBase;
-            auto range = g_ResourceMap.equal_range(AllocationBase);
-
-            for (auto it = range.first; it != range.second; ++it)
+            std::lock_guard PlacementUpdateLock(g_ResourceMapMutex);
+            auto range = g_ResourceMap.equal_range(it->second);
+            for (auto it2 = range.first; it2 != range.second;)
             {
-                if (it->second == this)
+                if (it2->second == this)
                 {
-                    g_ResourceMap.erase(it);
-                    break;
+                    it2 = g_ResourceMap.erase(it2);
+                }
+                else
+                {
+                    ++it2;
                 }
             }
+
+            g_AllocationBaseMap.erase(this);
         }
 
         delete this;
@@ -156,27 +158,28 @@ template <abi_t ABI> ULONG D3D11Texture1D<ABI>::AddRef()
 
 template <abi_t ABI> ULONG D3D11Texture1D<ABI>::Release()
 {
-    std::lock_guard PlacementUpdateLock(g_ResourceMapMutex);
     m_pFunction->Release();
     ULONG RefCount = InterlockedDecrement(&this->m_RefCount);
     if (!RefCount)
     {
-        void* AllocationBase = nullptr;
-        MEMORY_BASIC_INFORMATION mbi{};
-        SIZE_T Result = VirtualQuery(this->m_pAllocationStart, &mbi, sizeof(mbi));
-        if (mbi.AllocationBase && Result == sizeof(mbi))
+        auto it = g_AllocationBaseMap.find(this);
+        if (it != g_AllocationBaseMap.end())
         {
-            AllocationBase = mbi.AllocationBase;
-            auto range = g_ResourceMap.equal_range(AllocationBase);
-
-            for (auto it = range.first; it != range.second; ++it)
+            std::lock_guard PlacementUpdateLock(g_ResourceMapMutex);
+            auto range = g_ResourceMap.equal_range(it->second);
+            for (auto it2 = range.first; it2 != range.second;)
             {
-                if (it->second == this)
+                if (it2->second == this)
                 {
-                    g_ResourceMap.erase(it);
-                    break;
+                    it2 = g_ResourceMap.erase(it2);
+                }
+                else
+                {
+                    ++it2;
                 }
             }
+
+            g_AllocationBaseMap.erase(this);
         }
 
         delete this;
@@ -224,7 +227,7 @@ HRESULT D3D11Texture1D<ABI>::SetPrivateDataInterfaceGraphics(_GUID const &guid,
 //
 template <abi_t ABI> void D3D11Texture1D<ABI>::GetType(D3D11_RESOURCE_DIMENSION *pDimension)
 {
-    m_pFunction->GetType(pDimension);
+    *pDimension = D3D11_RESOURCE_DIMENSION_TEXTURE1D;
 }
 
 template <abi_t ABI> void D3D11Texture1D<ABI>::SetEvictionPriority(uint32_t EvictionPriority)
@@ -281,27 +284,28 @@ template <abi_t ABI> ULONG D3D11Texture2D<ABI>::AddRef()
 
 template <abi_t ABI> ULONG D3D11Texture2D<ABI>::Release()
 {
-    std::lock_guard PlacementUpdateLock(g_ResourceMapMutex);
     m_pFunction->Release();
     ULONG RefCount = InterlockedDecrement(&this->m_RefCount);
     if (!RefCount)
     {
-        void* AllocationBase = nullptr;
-        MEMORY_BASIC_INFORMATION mbi{};
-        SIZE_T Result = VirtualQuery(this->m_pAllocationStart, &mbi, sizeof(mbi));
-        if (mbi.AllocationBase && Result == sizeof(mbi))
+        auto it = g_AllocationBaseMap.find(this);
+        if (it != g_AllocationBaseMap.end())
         {
-            AllocationBase = mbi.AllocationBase;
-            auto range = g_ResourceMap.equal_range(AllocationBase);
-
-            for (auto it = range.first; it != range.second; ++it)
+            std::lock_guard PlacementUpdateLock(g_ResourceMapMutex);
+            auto range = g_ResourceMap.equal_range(it->second);
+            for (auto it2 = range.first; it2 != range.second;)
             {
-                if (it->second == this)
+                if (it2->second == this)
                 {
-                    g_ResourceMap.erase(it);
-                    break;
+                    it2 = g_ResourceMap.erase(it2);
+                }
+                else
+                {
+                    ++it2;
                 }
             }
+
+            g_AllocationBaseMap.erase(this);
         }
 
         delete this;
@@ -349,7 +353,7 @@ HRESULT D3D11Texture2D<ABI>::SetPrivateDataInterfaceGraphics(_GUID const &guid,
 //
 template <abi_t ABI> void D3D11Texture2D<ABI>::GetType(D3D11_RESOURCE_DIMENSION *pDimension)
 {
-    m_pFunction->GetType(pDimension);
+    *pDimension = D3D11_RESOURCE_DIMENSION_TEXTURE2D;
 }
 
 template <abi_t ABI> void D3D11Texture2D<ABI>::SetEvictionPriority(uint32_t EvictionPriority)
@@ -406,27 +410,28 @@ template <abi_t ABI> ULONG D3D11Texture3D<ABI>::AddRef()
 
 template <abi_t ABI> ULONG D3D11Texture3D<ABI>::Release()
 {
-    std::lock_guard PlacementUpdateLock(g_ResourceMapMutex);
     m_pFunction->Release();
     ULONG RefCount = InterlockedDecrement(&this->m_RefCount);
     if (!RefCount)
     {
-        void* AllocationBase = nullptr;
-        MEMORY_BASIC_INFORMATION mbi{};
-        SIZE_T Result = VirtualQuery(this->m_pAllocationStart, &mbi, sizeof(mbi));
-        if (mbi.AllocationBase && Result == sizeof(mbi))
+        auto it = g_AllocationBaseMap.find(this);
+        if (it != g_AllocationBaseMap.end())
         {
-            AllocationBase = mbi.AllocationBase;
-            auto range = g_ResourceMap.equal_range(AllocationBase);
-
-            for (auto it = range.first; it != range.second; ++it)
+            std::lock_guard PlacementUpdateLock(g_ResourceMapMutex);
+            auto range = g_ResourceMap.equal_range(it->second);
+            for (auto it2 = range.first; it2 != range.second;)
             {
-                if (it->second == this)
+                if (it2->second == this)
                 {
-                    g_ResourceMap.erase(it);
-                    break;
+                    it2 = g_ResourceMap.erase(it2);
+                }
+                else
+                {
+                    ++it2;
                 }
             }
+
+            g_AllocationBaseMap.erase(this);
         }
 
         delete this;
@@ -474,7 +479,7 @@ HRESULT D3D11Texture3D<ABI>::SetPrivateDataInterfaceGraphics(_GUID const &guid,
 //
 template <abi_t ABI> void D3D11Texture3D<ABI>::GetType(D3D11_RESOURCE_DIMENSION *pDimension)
 {
-    m_pFunction->GetType(pDimension);
+    *pDimension = D3D11_RESOURCE_DIMENSION_TEXTURE3D;
 }
 
 template <abi_t ABI> void D3D11Texture3D<ABI>::SetEvictionPriority(uint32_t EvictionPriority)
@@ -511,8 +516,16 @@ D3D11_DECLARE_ABI_TEMPLATES();
 //
 template <abi_t ABI> HRESULT D3D11Buffer<ABI>::QueryInterface(REFIID riid, void **ppvObject)
 {
+    if (riid == xcom::guid_of<gfx::ID3D11Buffer>() || riid == xcom::guid_of<gfx::ID3D11Resource>())
+    {
+        *ppvObject = this;
+        AddRef();
+        return S_OK;
+    }
+
     IMPLEMENT_STUB();
-    return E_NOTIMPL;
+    *ppvObject = nullptr;
+    return E_NOINTERFACE;
 }
 
 template <abi_t ABI> ULONG D3D11Buffer<ABI>::AddRef()
@@ -523,25 +536,67 @@ template <abi_t ABI> ULONG D3D11Buffer<ABI>::AddRef()
 
 template <abi_t ABI> ULONG D3D11Buffer<ABI>::Release()
 {
-    std::lock_guard PlacementUpdateLock(g_ResourceMapMutex);
     m_pFunction->Release();
     ULONG RefCount = InterlockedDecrement(&this->m_RefCount);
     if (!RefCount)
     {
-        void* AllocationBase = nullptr;
-        MEMORY_BASIC_INFORMATION mbi{};
-        SIZE_T Result = VirtualQuery(this->m_pAllocationStart, &mbi, sizeof(mbi));
-        if (mbi.AllocationBase && Result == sizeof(mbi))
+        auto it = g_AllocationBaseMap.find(this);
+        if (it != g_AllocationBaseMap.end())
         {
-            AllocationBase = mbi.AllocationBase;
-            auto range = g_ResourceMap.equal_range(AllocationBase);
-
-            for (auto it = range.first; it != range.second; ++it)
+            std::lock_guard PlacementUpdateLock(g_ResourceMapMutex);
+            auto range = g_ResourceMap.equal_range(it->second);
+            for (auto it2 = range.first; it2 != range.second;)
             {
-                if (it->second == this)
+                if (it2->second == this)
                 {
-                    g_ResourceMap.erase(it);
-                    break;
+                    it2 = g_ResourceMap.erase(it2);
+                }
+                else
+                {
+                    ++it2;
+                }
+            }
+
+            g_AllocationBaseMap.erase(this);
+        
+            if (g_IAFastIndexBuffer<ABI> == this)
+            {
+                g_IAFastIndexBuffer<ABI> = nullptr;
+            }
+
+            for (UINT i = 0; i < D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT; ++i)
+            {
+                if (g_PSFastConstantBuffers<ABI>[i] == this)
+                {
+                    g_PSFastConstantBuffers<ABI>[i] = nullptr;
+                }
+                if (g_VSFastConstantBuffers<ABI>[i] == this)
+                {
+                    g_VSFastConstantBuffers<ABI>[i] = nullptr;
+                }
+                if (g_CSFastConstantBuffers<ABI>[i] == this)
+                {
+                    g_CSFastConstantBuffers<ABI>[i] = nullptr;
+                }
+                if (g_GSFastConstantBuffers<ABI>[i] == this)
+                {
+                    g_GSFastConstantBuffers<ABI>[i] = nullptr;
+                }
+                if (g_HSFastConstantBuffers<ABI>[i] == this)
+                {
+                    g_HSFastConstantBuffers<ABI>[i] = nullptr;
+                }
+                if (g_DSFastConstantBuffers<ABI>[i] == this)
+                {
+                    g_DSFastConstantBuffers<ABI>[i] = nullptr;
+                }
+            }
+
+            for (UINT i = 0; i < D3D11_IA_VERTEX_INPUT_RESOURCE_SLOT_COUNT; ++i)
+            {
+                if (g_IAFastVertexBuffers<ABI>[i] == this)
+                {
+                    g_IAFastVertexBuffers<ABI>[i] = nullptr;
                 }
             }
         }
@@ -589,7 +644,7 @@ HRESULT D3D11Buffer<ABI>::SetPrivateDataInterfaceGraphics(_GUID const &guid, xbo
 //
 template <abi_t ABI> void D3D11Buffer<ABI>::GetType(D3D11_RESOURCE_DIMENSION *pDimension)
 {
-    m_pFunction->GetType(pDimension);
+    *pDimension = D3D11_RESOURCE_DIMENSION_BUFFER;
 }
 
 template <abi_t ABI> void D3D11Buffer<ABI>::SetEvictionPriority(uint32_t EvictionPriority)

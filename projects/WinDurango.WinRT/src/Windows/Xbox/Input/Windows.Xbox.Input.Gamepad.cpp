@@ -202,7 +202,7 @@ namespace winrt::Windows::Xbox::Input::implementation
 
     void Gamepad::GamepadAdded(winrt::event_token const& token) noexcept
     {
-        throw hresult_not_implemented();
+        
     }
 
     winrt::event_token Gamepad::GamepadRemoved(winrt::Windows::Foundation::EventHandler<winrt::Windows::Xbox::Input::GamepadRemovedEventArgs> const& handler)
@@ -212,7 +212,7 @@ namespace winrt::Windows::Xbox::Input::implementation
 
     void Gamepad::GamepadRemoved(winrt::event_token const& token) noexcept
     {
-        throw hresult_not_implemented();
+
     }
 
     uint64_t Gamepad::Id()

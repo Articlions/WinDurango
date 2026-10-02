@@ -264,25 +264,25 @@ public:
 };
 
 template <abi_t ABI>
-gfx::ID3D11Buffer<ABI> *g_VSFastConstantBuffers[D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT];
+gfx::ID3D11Buffer<ABI> *g_VSFastConstantBuffers[D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT]{};
 
 template <abi_t ABI>
-gfx::ID3D11Buffer<ABI> *g_PSFastConstantBuffers[D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT];
+gfx::ID3D11Buffer<ABI> *g_PSFastConstantBuffers[D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT]{};
 
 template <abi_t ABI>
-gfx::ID3D11Buffer<ABI> *g_CSFastConstantBuffers[D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT];
+gfx::ID3D11Buffer<ABI> *g_CSFastConstantBuffers[D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT]{};
 
 template <abi_t ABI>
-gfx::ID3D11Buffer<ABI> *g_GSFastConstantBuffers[D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT];
+gfx::ID3D11Buffer<ABI> *g_GSFastConstantBuffers[D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT]{};
 
 template <abi_t ABI>
-gfx::ID3D11Buffer<ABI> *g_HSFastConstantBuffers[D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT];
+gfx::ID3D11Buffer<ABI> *g_HSFastConstantBuffers[D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT]{};
 
 template <abi_t ABI>
-gfx::ID3D11Buffer<ABI> *g_DSFastConstantBuffers[D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT];
+gfx::ID3D11Buffer<ABI> *g_DSFastConstantBuffers[D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT]{};
 
 template <abi_t ABI>
-gfx::ID3D11Buffer<ABI> *g_IAFastVertexBuffers[D3D11_IA_VERTEX_INPUT_RESOURCE_SLOT_COUNT];
+gfx::ID3D11Buffer<ABI> *g_IAFastVertexBuffers[D3D11_IA_VERTEX_INPUT_RESOURCE_SLOT_COUNT]{};
 
 template <abi_t ABI>
 gfx::ID3D11Buffer<ABI> *g_IAFastIndexBuffer = nullptr;

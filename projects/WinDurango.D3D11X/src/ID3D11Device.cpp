@@ -13,6 +13,7 @@
 #include <d3d12.h>
 #include <d3dcompiler.h>
 #include "ID3D11DrawBundlesContext.h"
+#include "XG.h"
 
 //
 // IUnknown
@@ -44,8 +45,12 @@ template <abi_t ABI> HRESULT D3D11DeviceX<ABI>::QueryInterface(REFIID riid, void
 
     if (riid == __uuidof(ID3D11InfoQueue))
     {
-        *ppvObject = nullptr;
-        return E_NOINTERFACE;
+        ID3D11Debug *pD3D11Debug = nullptr;
+        m_pFunction->QueryInterface(__uuidof(ID3D11Debug), reinterpret_cast<void**>(&pD3D11Debug));
+        if (pD3D11Debug)
+        {
+            return pD3D11Debug->QueryInterface(__uuidof(ID3D11InfoQueue), ppvObject);
+        }
     }
 
     if (riid == __uuidof(ID3D12Device))
@@ -195,6 +200,13 @@ HRESULT D3D11DeviceX<ABI>::CreateShaderResourceView(gfx::ID3D11Resource<ABI> *pR
             else if (IsUnormFormat(Desc.Format) && IsUINTFormat(pDesc->Format))
             {
                 printf("D3D11 Warning: Game is trying to create an UINT SRV over an UNORM resource!\n");
+                if (Desc.Format == DXGI_FORMAT_B8G8R8A8_UNORM)
+                    pDesc2.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
+
+                hr = m_pFunction->CreateShaderResourceView(static_cast<D3D11Texture2D<ABI> *>(pResource)->m_pFunction, &pDesc2,
+                                                           &pView);
+
+                goto WrapperCreation;
             }
             else if (IsTypelessFormat(Desc.Format) && IsTypelessFormat(pDesc->Format))
             {
@@ -637,18 +649,17 @@ HRESULT D3D11DeviceX<ABI>::CreateCounter(D3D11_COUNTER_DESC const *pDesc, ID3D11
 template <abi_t ABI>
 HRESULT D3D11DeviceX<ABI>::CreateDeferredContext(uint32_t Flags, gfx::ID3D11DeviceContext<ABI> **ppDeferredContext)
 {
-    if (Flags & D3D11_CREATE_DEFERRED_CONTEXT_DRAW_BUNDLES)
+    if (Flags & gfx::D3D11_CREATE_DEFERRED_CONTEXT_DRAW_BUNDLES)
     {
-        *ppDeferredContext = new D3D11DrawBundlesContext<ABI>(nullptr);
+        if (!(Flags & gfx::D3D11_CREATE_DEFERRED_CONTEXT_TITLE_MANAGED_COMMAND_LIST_OBJECT_LIFETIMES))
+            printf("D3D11 Warning: Draw bundles should manage the command list object lifetimes!\n");
+
+        *ppDeferredContext = new D3D11DrawBundlesContext<ABI>(nullptr, Flags);
         return S_OK;
     }
 
-    ID3D11DeviceContext* pContext{};
     ID3D11DeviceContext2* pContext2{};
-    m_pFunction->CreateDeferredContext(0, &pContext);
-
-    pContext->QueryInterface(IID_PPV_ARGS(&pContext2));
-    pContext->Release();
+    m_pFunction->CreateDeferredContext2(0, &pContext2);
 
     *ppDeferredContext = new D3D11DeviceContextX<ABI>(pContext2);
     return S_OK;
@@ -697,9 +708,6 @@ HRESULT D3D11DeviceX<ABI>::CheckFeatureSupport(D3D11_FEATURE Feature, void *pFea
 
 template <abi_t ABI> HRESULT D3D11DeviceX<ABI>::GetPrivateData(_GUID const &guid, uint32_t *pDataSize, void *pData)
 {
-    /*
-     * IDK what Im doing here, rod plz help
-    */
     return m_pFunction->GetPrivateData(guid, pDataSize, pData);
 }
 
@@ -711,9 +719,6 @@ template <abi_t ABI> HRESULT D3D11DeviceX<ABI>::SetPrivateData(_GUID const &guid
 
 template <abi_t ABI> HRESULT D3D11DeviceX<ABI>::SetPrivateDataInterface(_GUID const &guid, IUnknown const *pData)
 {
-    /*
-     * IDK what Im doing here, rod plz help
-    */
     return m_pFunction->SetPrivateDataInterface(guid, pData);
 }
 
@@ -742,13 +747,8 @@ template <abi_t ABI> HRESULT D3D11DeviceX<ABI>::GetDeviceRemovedReason()
 
 template <abi_t ABI> void D3D11DeviceX<ABI>::GetImmediateContext(gfx::ID3D11DeviceContext<ABI> **ppImmediateContext)
 {
-    ID3D11DeviceContext* pContext{};
     ID3D11DeviceContext2* pContext2{};
-    m_pFunction->GetImmediateContext(&pContext);
-
-    pContext->QueryInterface(IID_PPV_ARGS(&pContext2));
-    pContext->Release();
-
+    m_pFunction->GetImmediateContext2(&pContext2);
     *ppImmediateContext = new D3D11DeviceContextX<ABI>(pContext2);
 }
 
@@ -769,31 +769,25 @@ template <abi_t ABI> uint32_t D3D11DeviceX<ABI>::GetExceptionMode()
 //
 template <abi_t ABI> void D3D11DeviceX<ABI>::GetImmediateContext1(gfx::ID3D11DeviceContext1<ABI> **ppImmediateContext)
 {
-    ID3D11DeviceContext* pContext{};
     ID3D11DeviceContext2* pContext2{};
-    m_pFunction->GetImmediateContext(&pContext);
-
-    pContext->QueryInterface(IID_PPV_ARGS(&pContext2));
-    pContext->Release();
-
+    m_pFunction->GetImmediateContext2(&pContext2);
     *ppImmediateContext = new D3D11DeviceContextX<ABI>(pContext2);
 }
 
 template <abi_t ABI>
 HRESULT D3D11DeviceX<ABI>::CreateDeferredContext1(uint32_t Flags, gfx::ID3D11DeviceContext1<ABI> **ppDeferredContext1)
 {
-    if (Flags & D3D11_CREATE_DEFERRED_CONTEXT_DRAW_BUNDLES)
+    if (Flags & gfx::D3D11_CREATE_DEFERRED_CONTEXT_DRAW_BUNDLES)
     {
-        *ppDeferredContext1 = new D3D11DrawBundlesContext<ABI>(nullptr);
+        if (!(Flags & gfx::D3D11_CREATE_DEFERRED_CONTEXT_TITLE_MANAGED_COMMAND_LIST_OBJECT_LIFETIMES))
+            printf("D3D11 Warning: Draw bundles should manage the command list object lifetimes!\n");
+
+        *ppDeferredContext1 = new D3D11DrawBundlesContext<ABI>(nullptr, Flags);
         return S_OK;
     }
 
-    ID3D11DeviceContext* pContext{};
     ID3D11DeviceContext2* pContext2{};
-    m_pFunction->CreateDeferredContext(0, &pContext);
-
-    pContext->QueryInterface(IID_PPV_ARGS(&pContext2));
-    pContext->Release();
+    m_pFunction->CreateDeferredContext2(0, &pContext2);
 
     *ppDeferredContext1 = new D3D11DeviceContextX<ABI>(pContext2);
     return S_OK;
@@ -845,24 +839,25 @@ HRESULT D3D11DeviceX<ABI>::OpenSharedResourceByName(wchar_t const *pName, uint32
 //
 template <abi_t ABI> void D3D11DeviceX<ABI>::GetImmediateContext2(gfx::ID3D11DeviceContext2<ABI> **ppImmediateContext)
 {
-    IMPLEMENT_STUB();
+    ID3D11DeviceContext2* pContext2{};
+    m_pFunction->GetImmediateContext2(&pContext2);
+    *ppImmediateContext = new D3D11DeviceContextX<ABI>(pContext2);
 }
 
 template <abi_t ABI>
 HRESULT D3D11DeviceX<ABI>::CreateDeferredContext2(uint32_t Flags, gfx::ID3D11DeviceContext2<ABI> **ppDeferredContext)
 {
-    if (Flags & D3D11_CREATE_DEFERRED_CONTEXT_DRAW_BUNDLES)
+    if (Flags & gfx::D3D11_CREATE_DEFERRED_CONTEXT_DRAW_BUNDLES)
     {
-        *ppDeferredContext = new D3D11DrawBundlesContext<ABI>(nullptr);
+        if (!(Flags & gfx::D3D11_CREATE_DEFERRED_CONTEXT_TITLE_MANAGED_COMMAND_LIST_OBJECT_LIFETIMES))
+            printf("D3D11 Warning: Draw bundles should manage the command list object lifetimes!\n");
+
+        *ppDeferredContext = new D3D11DrawBundlesContext<ABI>(nullptr, Flags);
         return S_OK;
     }
 
-    ID3D11DeviceContext* pContext{};
     ID3D11DeviceContext2* pContext2{};
-    m_pFunction->CreateDeferredContext(0, &pContext);
-
-    pContext->QueryInterface(IID_PPV_ARGS(&pContext2));
-    pContext->Release();
+    m_pFunction->CreateDeferredContext2(0, &pContext2);
 
     *ppDeferredContext = new D3D11DeviceContextX<ABI>(pContext2);
     return S_OK;
@@ -882,7 +877,6 @@ template <abi_t ABI>
 HRESULT D3D11DeviceX<ABI>::CheckMultisampleQualityLevels1(DXGI_FORMAT Format, uint32_t SampleCount, uint32_t Flags,
                                                           uint32_t *pNumQualityLevels)
 {
-    Flags = 0;
     return m_pFunction->CheckMultisampleQualityLevels1(Format, SampleCount, Flags, pNumQualityLevels);
 }
 
@@ -891,13 +885,8 @@ HRESULT D3D11DeviceX<ABI>::CheckMultisampleQualityLevels1(DXGI_FORMAT Format, ui
 //
 template <abi_t ABI> void D3D11DeviceX<ABI>::GetImmediateContextX(gfx::ID3D11DeviceContextX<ABI> **ppImmediateContextX)
 {
-    ID3D11DeviceContext* pContext{};
     ID3D11DeviceContext2* pContext2{};
-    m_pFunction->GetImmediateContext(&pContext);
-
-    pContext->QueryInterface(IID_PPV_ARGS(&pContext2));
-    pContext->Release();
-
+    m_pFunction->GetImmediateContext2(&pContext2);
     *ppImmediateContextX = new D3D11DeviceContextX<ABI>(pContext2);
 }
 
@@ -942,7 +931,7 @@ template <abi_t ABI>
 HRESULT D3D11DeviceX<ABI>::CreatePlacementBuffer(D3D11_BUFFER_DESC const *pDesc, void *pVirtualAddress,
                                                  gfx::ID3D11Buffer<ABI> **ppBuffer)
 {
-    std::lock_guard<std::mutex> lock(g_ResourceMapMutex);
+    std::lock_guard lock(g_ResourceMapMutex);
     D3D11_SUBRESOURCE_DATA initialData{};
     initialData.pSysMem = pVirtualAddress;
     initialData.SysMemPitch = 0;
@@ -954,13 +943,9 @@ HRESULT D3D11DeviceX<ABI>::CreatePlacementBuffer(D3D11_BUFFER_DESC const *pDesc,
         pDesc2.Usage = D3D11_USAGE_DEFAULT;
     }
 
-    if (pDesc2.Usage == D3D11_USAGE_DEFAULT)
+    if (pDesc2.Usage == D3D11_USAGE_DEFAULT && pDesc2.BindFlags == D3D11_BIND_CONSTANT_BUFFER && pDesc2.CPUAccessFlags > 0)
     {
-        if (pDesc2.BindFlags == D3D11_BIND_CONSTANT_BUFFER)
-        {
-            //EA, would you mind telling me why the fuck would a constant buffer with default usage need CPU write access?
-            if (pDesc2.CPUAccessFlags > 0) pDesc2.CPUAccessFlags = 0;
-        }
+        pDesc2.CPUAccessFlags = 0; //EA, would you mind telling me why the fuck would a constant buffer with default usage need CPU write access?
     }
 
     HRESULT hr = 0;
@@ -975,9 +960,11 @@ HRESULT D3D11DeviceX<ABI>::CreatePlacementBuffer(D3D11_BUFFER_DESC const *pDesc,
         SIZE_T Result = VirtualQuery(pVirtualAddress, &mbi, sizeof(mbi));
         if (Result == sizeof(mbi) && mbi.AllocationBase)
         {
+            D3D11Buffer<ABI> *Buffer = static_cast<D3D11Buffer<ABI>*>((*ppBuffer));
             (*ppBuffer)->m_pAllocationStart = pVirtualAddress;
-            static_cast<D3D11Buffer<ABI> *>((*ppBuffer))->m_IsDirty = true;
+            Buffer->m_IsDirty = true;
             g_ResourceMap.insert({mbi.AllocationBase, (*ppBuffer)});
+            g_AllocationBaseMap.insert({(*ppBuffer), mbi.AllocationBase});
         }
     }
 
@@ -988,18 +975,18 @@ template <abi_t ABI>
 HRESULT D3D11DeviceX<ABI>::CreatePlacementTexture1D(D3D11_TEXTURE1D_DESC const *pDesc, UINT TileModeIndex, UINT Pitch,
                                                     void *pVirtualAddress, gfx::ID3D11Texture1D<ABI> **ppTexture1D)
 {
-    std::lock_guard<std::mutex> lock(g_ResourceMapMutex);
+    std::lock_guard lock(g_ResourceMapMutex);
     std::vector<D3D11_SUBRESOURCE_DATA> initialData(pDesc->ArraySize * pDesc->MipLevels);
     UINT RowPitch = 0;
     UINT SlicePitch = 0;
     auto pDesc2 = *pDesc;
-    //pDesc2.MipLevels = 1;
+
     if (pDesc2.Usage == D3D11_USAGE_IMMUTABLE)
     {
         pDesc2.Usage = D3D11_USAGE_DEFAULT;
     }
 
-    for (int i = 0; i < initialData.size(); i++)
+    for (int i = 0; i < initialData.size(); ++i)
     {
         initialData[i].pSysMem = pVirtualAddress;
         CalculatePitch(pDesc2.Width, 1, pDesc2.Format, &RowPitch, &SlicePitch);
@@ -1024,25 +1011,25 @@ HRESULT D3D11DeviceX<ABI>::CreatePlacementTexture1D(D3D11_TEXTURE1D_DESC const *
         return hr;
     }
 
-    return S_OK;
+    return E_FAIL;
 }
 
 template <abi_t ABI>
 HRESULT D3D11DeviceX<ABI>::CreatePlacementTexture2D(D3D11_TEXTURE2D_DESC const *pDesc, UINT TileModeIndex, UINT Pitch,
                                                     void *pVirtualAddress, gfx::ID3D11Texture2D<ABI> **ppTexture2D)
 {
-    std::lock_guard<std::mutex> lock(g_ResourceMapMutex);
+    std::lock_guard lock(g_ResourceMapMutex);
     std::vector<D3D11_SUBRESOURCE_DATA> initialData(pDesc->ArraySize * pDesc->MipLevels);
     UINT RowPitch = 0;
     UINT SlicePitch = 0;
     auto pDesc2 = *pDesc;
-    //pDesc2.MipLevels = 1;
+
     if (pDesc2.Usage == D3D11_USAGE_IMMUTABLE)
     {
         pDesc2.Usage = D3D11_USAGE_DEFAULT;
     }
 
-    for (int i = 0; i < initialData.size(); i++)
+    for (int i = 0; i < initialData.size(); ++i)
     {
         initialData[i].pSysMem = pVirtualAddress;
         CalculatePitch(pDesc2.Width, pDesc2.Height, pDesc2.Format, &RowPitch, &SlicePitch);
@@ -1055,12 +1042,14 @@ HRESULT D3D11DeviceX<ABI>::CreatePlacementTexture2D(D3D11_TEXTURE2D_DESC const *
         (mbi.State & MEM_COMMIT) != MEM_COMMIT || (mbi.Protect & (PAGE_READWRITE | PAGE_READONLY)) == 0)
     {
         HRESULT hr = CreateTexture2D(&pDesc2, 0, ppTexture2D);
-        if (mbi.AllocationBase) (*ppTexture2D)->m_pAllocationStart = pVirtualAddress;
-        if (mbi.AllocationBase) static_cast<D3D11Texture2D<ABI>*>((*ppTexture2D))->m_TileModeIndex = TileModeIndex;
-        if (mbi.AllocationBase) static_cast<D3D11Texture2D<ABI>*>((*ppTexture2D))->m_IsDirty = true;
-        static_cast<D3D11Texture2D<ABI>*>((*ppTexture2D))->m_RowPitch = RowPitch;
-        static_cast<D3D11Texture2D<ABI>*>((*ppTexture2D))->m_SlicePitch = SlicePitch;
+        (*ppTexture2D)->m_pAllocationStart = pVirtualAddress;
+        D3D11Texture2D<ABI> *Texture = static_cast<D3D11Texture2D<ABI>*>((*ppTexture2D));
+        Texture->m_TileModeIndex = TileModeIndex;
+        Texture->m_IsDirty = true;
+        Texture->m_RowPitch = RowPitch;
+        Texture->m_SlicePitch = SlicePitch;
         if (mbi.AllocationBase) g_ResourceMap.insert({mbi.AllocationBase, (*ppTexture2D)});
+        if (mbi.AllocationBase) g_AllocationBaseMap.insert({(*ppTexture2D), mbi.AllocationBase});
         initialData.clear();
         return hr;
     }
@@ -1068,46 +1057,52 @@ HRESULT D3D11DeviceX<ABI>::CreatePlacementTexture2D(D3D11_TEXTURE2D_DESC const *
     {
         HRESULT hr = CreateTexture2D(&pDesc2, 0, ppTexture2D);
         (*ppTexture2D)->m_pAllocationStart = pVirtualAddress;
-        static_cast<D3D11Texture2D<ABI>*>((*ppTexture2D))->m_TileModeIndex = TileModeIndex;
-        static_cast<D3D11Texture2D<ABI>*>((*ppTexture2D))->m_IsDirty = true;
-        static_cast<D3D11Texture2D<ABI>*>((*ppTexture2D))->m_RowPitch = RowPitch;
-        static_cast<D3D11Texture2D<ABI>*>((*ppTexture2D))->m_SlicePitch = SlicePitch;
+        D3D11Texture2D<ABI> *Texture = static_cast<D3D11Texture2D<ABI>*>((*ppTexture2D));
+        Texture->m_TileModeIndex = TileModeIndex;
+        Texture->m_IsDirty = true;
+        Texture->m_RowPitch = RowPitch;
+        Texture->m_SlicePitch = SlicePitch;
         g_ResourceMap.insert({mbi.AllocationBase, (*ppTexture2D)});
+        g_AllocationBaseMap.insert({(*ppTexture2D), mbi.AllocationBase});
         initialData.clear();
+
         return hr;
     }
     else
     {
         HRESULT hr = CreateTexture2D(&pDesc2, initialData.data(), ppTexture2D);
         (*ppTexture2D)->m_pAllocationStart = pVirtualAddress;
-        static_cast<D3D11Texture2D<ABI>*>((*ppTexture2D))->m_TileModeIndex = TileModeIndex;
-        static_cast<D3D11Texture2D<ABI>*>((*ppTexture2D))->m_IsDirty = true;
-        static_cast<D3D11Texture2D<ABI>*>((*ppTexture2D))->m_RowPitch = RowPitch;
-        static_cast<D3D11Texture2D<ABI>*>((*ppTexture2D))->m_SlicePitch = SlicePitch;
+        D3D11Texture2D<ABI> *Texture = static_cast<D3D11Texture2D<ABI>*>((*ppTexture2D));
+        Texture->m_TileModeIndex = TileModeIndex;
+        Texture->m_IsDirty = true;
+        Texture->m_RowPitch = RowPitch;
+        Texture->m_SlicePitch = SlicePitch;
         g_ResourceMap.insert({mbi.AllocationBase, (*ppTexture2D)});
+        g_AllocationBaseMap.insert({(*ppTexture2D), mbi.AllocationBase});
         initialData.clear();
+
         return hr;
     }
 
-    return S_OK;
+    return E_FAIL;
 }
 
 template <abi_t ABI>
 HRESULT D3D11DeviceX<ABI>::CreatePlacementTexture3D(D3D11_TEXTURE3D_DESC const *pDesc, UINT TileModeIndex, UINT Pitch,
                                                     void *pVirtualAddress, gfx::ID3D11Texture3D<ABI> **ppTexture3D)
 {
-    std::lock_guard<std::mutex> lock(g_ResourceMapMutex);
+    std::lock_guard lock(g_ResourceMapMutex);
     std::vector<D3D11_SUBRESOURCE_DATA> initialData(pDesc->MipLevels);
     UINT RowPitch = 0;
     UINT SlicePitch = 0;
     auto pDesc2 = *pDesc;
-    //pDesc2.MipLevels = 1;
+
     if (pDesc2.Usage == D3D11_USAGE_IMMUTABLE)
     {
         pDesc2.Usage = D3D11_USAGE_DEFAULT;
     }
 
-    for (int i = 0; i < initialData.size(); i++)
+    for (int i = 0; i < initialData.size(); ++i)
     {
         initialData[i].pSysMem = pVirtualAddress;
         CalculatePitch(pDesc2.Width, pDesc2.Height, pDesc2.Format, &RowPitch, &SlicePitch);
@@ -1132,7 +1127,7 @@ HRESULT D3D11DeviceX<ABI>::CreatePlacementTexture3D(D3D11_TEXTURE3D_DESC const *
         return hr;
     }
 
-    return S_OK;
+    return E_FAIL;
 }
 
 //Implementation provided by DaZombieKiller back in GenERA!
@@ -1194,18 +1189,17 @@ HRESULT D3D11DeviceX<ABI>::CreateSamplerStateX(gfx::D3D11X_SAMPLER_DESC const *p
 template <abi_t ABI>
 HRESULT D3D11DeviceX<ABI>::CreateDeferredContextX(UINT Flags, gfx::ID3D11DeviceContextX<ABI> **ppDeferredContext)
 {
-    if (Flags & D3D11_CREATE_DEFERRED_CONTEXT_DRAW_BUNDLES)
+    if (Flags & gfx::D3D11_CREATE_DEFERRED_CONTEXT_DRAW_BUNDLES)
     {
-        *ppDeferredContext = reinterpret_cast<gfx::ID3D11DeviceContextX<ABI>*>(new D3D11DrawBundlesContext<ABI>(nullptr));
+        if (!(Flags & gfx::D3D11_CREATE_DEFERRED_CONTEXT_TITLE_MANAGED_COMMAND_LIST_OBJECT_LIFETIMES))
+            printf("D3D11 Warning: Draw bundles should manage the command list object lifetimes!\n");
+
+        *ppDeferredContext = reinterpret_cast<gfx::ID3D11DeviceContextX<ABI>*>(new D3D11DrawBundlesContext<ABI>(nullptr, Flags));
         return S_OK;
     }
 
-    ID3D11DeviceContext* pContext{};
     ID3D11DeviceContext2* pContext2{};
-    m_pFunction->CreateDeferredContext(0, &pContext);
-
-    pContext->QueryInterface(IID_PPV_ARGS(&pContext2));
-    pContext->Release();
+    m_pFunction->CreateDeferredContext2(0, &pContext2);
 
     *ppDeferredContext = new D3D11DeviceContextX<ABI>(pContext2);
     return S_OK;
@@ -1235,15 +1229,16 @@ HRESULT D3D11DeviceX<ABI>::CreatePlacementRenderableTexture2D(D3D11_TEXTURE2D_DE
                                                               gfx::D3D11X_RENDERABLE_TEXTURE_ADDRESSES const *pAddresses,
                                                               gfx::ID3D11Texture2D<ABI> **ppTexture2D)
 {
-    std::lock_guard<std::mutex> lock(g_ResourceMapMutex);
+    //TODO: Figure out how the fuck should this should work with multiple addresses
+    //that can't be used at creation, and by that I mean none of them!
+    std::lock_guard lock(g_ResourceMapMutex);
     auto pDesc2 = *pDesc;
-    //pDesc2.MipLevels = 1;
     if (pDesc2.Usage == D3D11_USAGE_IMMUTABLE)
     {
         pDesc2.Usage = D3D11_USAGE_DEFAULT;
     }
 
-    return CreateTexture2D(&pDesc2, nullptr, ppTexture2D);
+    return CreateTexture2D(&pDesc2, nullptr, ppTexture2D);;
 }
 
 template <abi_t ABI>
@@ -1328,9 +1323,6 @@ template <abi_t ABI> void D3D11DeviceX<ABI>::ReportGpuHang(UINT Flags)
 
 template <abi_t ABI> HRESULT D3D11DeviceX<ABI>::SetGpuMemoryPriority(UINT Priority)
 {
-    /*
-     * TODO: Impl
-    */
     return S_OK;
 }
 

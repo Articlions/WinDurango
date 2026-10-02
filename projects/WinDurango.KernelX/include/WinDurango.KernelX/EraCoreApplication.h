@@ -161,7 +161,8 @@ class FrameworkViewEra : public IFrameworkView
     {
         window = reinterpret_cast<ABI::Windows::UI::Core::ICoreWindow *>(
             new CoreWindowEra((ABI::Windows::UI::Core::CoreWindow *)window));
-        m_realView->SetWindow(window);
+        HRESULT hr = m_realView->SetWindow(window);
+        hr = reinterpret_cast<CoreWindowEra*>(window)->Activate();
 
         //Resizes game window to 1280x720 so it's not a square by default.
         auto view = winrt::Windows::UI::ViewManagement::ApplicationView::GetForCurrentView();

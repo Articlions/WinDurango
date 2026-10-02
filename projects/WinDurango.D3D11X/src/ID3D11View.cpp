@@ -268,7 +268,7 @@ template <abi_t ABI> void D3D11DepthStencilView<ABI>::GetResource(gfx::ID3D11Res
 //
 template <abi_t ABI> void D3D11DepthStencilView<ABI>::GetDesc(D3D11_DEPTH_STENCIL_VIEW_DESC *pDesc)
 {
-    IMPLEMENT_STUB();
+    m_pFunction->GetDesc(pDesc);
 }
 
 #undef ABI_INTERFACE
@@ -297,31 +297,43 @@ template <abi_t ABI> ULONG D3D11ShaderResourceView<ABI>::Release()
     ULONG RefCount = InterlockedDecrement(&this->m_RefCount);
     if (!RefCount)
     {
-        for (UINT i = 0; i < D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT; i++)
+        for (UINT i = 0; i < D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT; ++i)
         {
             if (g_PSFastShaderResources<ABI>[i] == this)
             {
                 g_PSFastShaderResources<ABI>[i] = nullptr;
+                delete this;
+                return RefCount;
             }
             if (g_VSFastShaderResources<ABI>[i] == this)
             {
                 g_VSFastShaderResources<ABI>[i] = nullptr;
+                delete this;
+                return RefCount;
             }
             if (g_CSFastShaderResources<ABI>[i] == this)
             {
                 g_CSFastShaderResources<ABI>[i] = nullptr;
+                delete this;
+                return RefCount;
             }
             if (g_GSFastShaderResources<ABI>[i] == this)
             {
                 g_GSFastShaderResources<ABI>[i] = nullptr;
+                delete this;
+                return RefCount;
             }
             if (g_HSFastShaderResources<ABI>[i] == this)
             {
                 g_HSFastShaderResources<ABI>[i] = nullptr;
+                delete this;
+                return RefCount;
             }
             if (g_DSFastShaderResources<ABI>[i] == this)
             {
                 g_DSFastShaderResources<ABI>[i] = nullptr;
+                delete this;
+                return RefCount;
             }
         }
         delete this;
@@ -513,7 +525,7 @@ template <abi_t ABI> void D3D11UnorderedAccessView<ABI>::GetResource(gfx::ID3D11
 //
 template <abi_t ABI> void D3D11UnorderedAccessView<ABI>::GetDesc(D3D11_UNORDERED_ACCESS_VIEW_DESC *pDesc)
 {
-    IMPLEMENT_STUB();
+    m_pFunction->GetDesc(pDesc);
 }
 
 #undef ABI_INTERFACE

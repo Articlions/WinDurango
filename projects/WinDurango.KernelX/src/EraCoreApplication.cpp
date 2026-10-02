@@ -8,6 +8,7 @@ INT32 CoreApplicationEra::_abi_get_Id(HSTRING *value)
 INT32 CoreApplicationEra::_abi_add_Suspending(
     __FIEventHandler_1_Windows__CApplicationModel__CSuspendingEventArgs *handler, EventRegistrationToken *token)
 {
+    *token = EventRegistrationToken();
     return S_OK;
 }
 
@@ -18,6 +19,7 @@ INT32 CoreApplicationEra::_abi_remove_Suspending(EventRegistrationToken token)
 
 INT32 CoreApplicationEra::_abi_add_Resuming(__FIEventHandler_1_IInspectable *handler, EventRegistrationToken *token)
 {
+    *token = EventRegistrationToken();
     return S_OK;
 }
 
@@ -57,6 +59,7 @@ HRESULT CoreApplicationEra::_abi_get_ResourceAvailability(ResourceAvailability *
 HRESULT CoreApplicationEra::_abi_add_ResourceAvailabilityChanged(
     winrt::Windows::Foundation::EventHandler<IInspectable> *handler, EventRegistrationToken *token)
 {
+    *token = EventRegistrationToken();
     return S_OK;
 }
 
@@ -90,6 +93,7 @@ HRESULT CoreApplicationEra::Exit()
 
 HRESULT CoreApplicationEra::add_Exiting(__FIEventHandler_1_IInspectable *handler, EventRegistrationToken *token)
 {
+    *token = EventRegistrationToken();
     return S_OK;
 }
 

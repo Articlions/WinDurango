@@ -19,7 +19,10 @@ template <abi_t ABI> ULONG D3D11DMAEngineContextX<ABI>::Release()
     m_pImmediateContext->Release();
     ULONG RefCount = InterlockedDecrement(&this->m_RefCount);
     if (!RefCount)
+    {
+        m_pImmediateContext->RemoveBackgroundContext(this);
         delete this;
+    }
     return RefCount;
 }
 

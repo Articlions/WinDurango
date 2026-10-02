@@ -1,6 +1,7 @@
 #include "Windows.Xbox.Chat.ChatSession.h"
 #include "Windows.Xbox.Chat.ChatEncoder.h"
 #include "Windows.Xbox.Chat.ChatDecoder.h"
+#include "Windows.Xbox.Chat.ChatChannel.h"
 #include "Windows.Xbox.Chat.Format.h"
 #include "WinDurangoWinRT.h"
 #include "Windows.Xbox.System.User.h"
@@ -69,9 +70,9 @@ namespace winrt::Windows::Xbox::Chat::implementation
     {
 
     }
-    winrt::Windows::Foundation::Collections::IVectorView<winrt::Windows::Xbox::Chat::ChatChannel> ChatSession::Channels()
+    winrt::Windows::Foundation::Collections::IVector<winrt::Windows::Xbox::Chat::ChatChannel> ChatSession::Channels()
     {
-        return winrt::single_threaded_vector<winrt::Windows::Xbox::Chat::ChatChannel>().GetView();
+        return winrt::single_threaded_vector<winrt::Windows::Xbox::Chat::ChatChannel>();
     }
     winrt::event_token ChatSession::StateChangedEvent(winrt::Windows::Xbox::Chat::ChatSessionStateChangedHandler const& handler)
     {

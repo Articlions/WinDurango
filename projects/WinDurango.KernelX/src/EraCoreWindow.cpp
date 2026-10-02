@@ -105,12 +105,7 @@ HRESULT CoreWindowEra::_abi_remove_Closed(EventRegistrationToken token)
 HRESULT CoreWindowEra::_abi_add_InputEnabled(ITypedEventHandler<CoreWindow *, InputEnabledEventArgs *> *handler,
                                              EventRegistrationToken *token)
 {
-    HRESULT hr = m_realWindow->add_InputEnabled(handler, token);
-
-    if (FAILED(hr) || !token)
-        *token = EventRegistrationToken();
-
-    return S_OK;
+    return m_realWindow->add_InputEnabled(handler, token);
 }
 
 HRESULT CoreWindowEra::_abi_remove_InputEnabled(EventRegistrationToken token)
@@ -133,11 +128,7 @@ HRESULT CoreWindowEra::_abi_remove_KeyDown(EventRegistrationToken token)
 HRESULT CoreWindowEra::_abi_add_KeyUp(ITypedEventHandler<CoreWindow *, KeyEventArgs *> *handler,
                                       EventRegistrationToken *token)
 {
-    HRESULT hr = m_realWindow->add_KeyUp(handler, token);
-
-    if (FAILED(hr) || !token)
-        *token = EventRegistrationToken();
-
+    *token = EventRegistrationToken();
     return S_OK;
 }
 
@@ -149,12 +140,7 @@ HRESULT CoreWindowEra::_abi_remove_KeyUp(EventRegistrationToken token)
 HRESULT CoreWindowEra::_abi_add_PointerMoved(ITypedEventHandler<CoreWindow *, PointerEventArgs *> *handler,
                                              EventRegistrationToken *token)
 {
-    HRESULT hr = m_realWindow->add_PointerMoved(handler, token);
-
-    if (FAILED(hr) || !token)
-        *token = EventRegistrationToken();
-
-    return S_OK;
+    return m_realWindow->add_PointerMoved(handler, token);
 }
 
 HRESULT CoreWindowEra::_abi_remove_PointerMoved(EventRegistrationToken token)
@@ -165,12 +151,7 @@ HRESULT CoreWindowEra::_abi_remove_PointerMoved(EventRegistrationToken token)
 HRESULT CoreWindowEra::_abi_add_PointerEntered(ITypedEventHandler<CoreWindow *, PointerEventArgs *> *handler,
                                                EventRegistrationToken *token)
 {
-    HRESULT hr = m_realWindow->add_PointerEntered(handler, token);
-
-    if (FAILED(hr) || !token)
-        *token = EventRegistrationToken();
-
-    return S_OK;
+    return m_realWindow->add_PointerEntered(handler, token);
 }
 
 HRESULT CoreWindowEra::_abi_remove_PointerEntered(EventRegistrationToken token)
@@ -181,12 +162,7 @@ HRESULT CoreWindowEra::_abi_remove_PointerEntered(EventRegistrationToken token)
 HRESULT CoreWindowEra::_abi_add_PointerExited(ITypedEventHandler<CoreWindow *, PointerEventArgs *> *handler,
                                               EventRegistrationToken *token)
 {
-    HRESULT hr = m_realWindow->add_PointerExited(handler, token);
-
-    if (FAILED(hr) || !token)
-        *token = EventRegistrationToken();
-
-    return S_OK;
+    return m_realWindow->add_PointerExited(handler, token);
 }
 
 HRESULT CoreWindowEra::_abi_remove_PointerExited(EventRegistrationToken token)
@@ -197,12 +173,7 @@ HRESULT CoreWindowEra::_abi_remove_PointerExited(EventRegistrationToken token)
 HRESULT CoreWindowEra::_abi_add_SizeChanged(ITypedEventHandler<CoreWindow *, WindowSizeChangedEventArgs *> *handler,
                                             EventRegistrationToken *token)
 {
-    HRESULT hr = m_realWindow->add_SizeChanged(handler, token);
-
-    if (FAILED(hr) || !token)
-        *token = EventRegistrationToken();
-
-    return S_OK;
+    return m_realWindow->add_SizeChanged(handler, token);
 }
 
 HRESULT CoreWindowEra::_abi_remove_SizeChanged(EventRegistrationToken token)
@@ -213,12 +184,7 @@ HRESULT CoreWindowEra::_abi_remove_SizeChanged(EventRegistrationToken token)
 HRESULT CoreWindowEra::_abi_add_VisibilityChanged(
     ITypedEventHandler<CoreWindow *, VisibilityChangedEventArgs *> *handler, EventRegistrationToken *token)
 {
-    HRESULT hr = m_realWindow->add_VisibilityChanged(handler, token);
-
-    if (FAILED(hr) || !token)
-        *token = EventRegistrationToken();
-
-    return S_OK;
+    return m_realWindow->add_VisibilityChanged(handler, token);
 }
 
 HRESULT CoreWindowEra::_abi_remove_VisibilityChanged(EventRegistrationToken token)

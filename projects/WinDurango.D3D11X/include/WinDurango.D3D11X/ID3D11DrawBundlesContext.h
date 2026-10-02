@@ -6,12 +6,14 @@ template <abi_t ABI> class D3D11DrawBundlesContext : public gfx::ID3D11DrawBundl
 public:
     ID3D11DeviceContext2 *m_pFunction;
     std::vector<DrawBundlesCommand<ABI>> m_CommandQueue;
+    UINT m_Flags = 0;
 
-    D3D11DrawBundlesContext(ID3D11DeviceContext2 *pContext)
+    D3D11DrawBundlesContext(ID3D11DeviceContext2 *pContext, UINT Flags)
     {
         if (this->m_RefCount != 0)
             this->m_RefCount = 0;
         m_pFunction = pContext;
+        m_Flags = Flags;
         InterlockedIncrement(&this->m_RefCount);
         memcpy(&this->m_Function, *(void ***)this, sizeof(this->m_Function));
     }

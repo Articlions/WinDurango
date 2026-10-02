@@ -17,16 +17,6 @@ namespace winrt::Windows::Xbox::System::implementation
         return UserOnlineState::Offline;
     }
 
-    winrt::hresult GetPictureResult::Result()
-    {
-        return result;
-    }
-
-    uint32_t GetPictureResult::RequiredBufferSize()
-    {
-        return bufferSize;
-    }
-
     winrt::Windows::Xbox::System::User SignInCompletedEventArgs::User()
     {
         return user;

@@ -243,6 +243,9 @@ EXTERN_C DWORD __stdcall EraGetFileAttributesW(LPCWSTR lpFileName);
 EXTERN_C BOOL __stdcall EraGetFileAttributesExW(LPCWSTR lpFileName, GET_FILEEX_INFO_LEVELS fInfoLevelId,
                                                 LPVOID lpFileInformation);
 
+EXTERN_C BOOL __stdcall EraGetFileAttributesExA(LPCSTR lpFileName, GET_FILEEX_INFO_LEVELS fInfoLevelId,
+                                                LPVOID lpFileInformation);
+
 EXTERN_C HANDLE __stdcall EraFindFirstFileW(LPCWSTR lpFileName, LPWIN32_FIND_DATAW lpFindFileData);
 
 EXTERN_C BOOL __stdcall EraDeleteFileW(LPCWSTR lpFileName);
