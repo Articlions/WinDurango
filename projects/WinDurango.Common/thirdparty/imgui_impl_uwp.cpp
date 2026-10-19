@@ -58,12 +58,12 @@ public:
 };
 
 // Clipboard support
-#if !defined(IMGUI_DISABLE_UWP_DEFAULT_CLIPBOARD_FUNCTIONS)
+#ifndef IMGUI_DISABLE_UWP_DEFAULT_CLIPBOARD_FUNCTIONS
 #include "imgui_internal.h"
 #include <windows.applicationmodel.datatransfer.h>
 
-static const char* ImGui_ImplUwp_GetClipboardTextFn(void* user_data_ctx);
-static void        ImGui_ImplUwp_SetClipboardTextFn(void* user_data_ctx, const char* text);
+static const char *ImGui_ImplUwp_GetClipboardTextFn(ImGuiContext *ctx);
+static void ImGui_ImplUwp_SetClipboardTextFn(ImGuiContext *ctx, const char *text);
 #endif
 
 struct ImGui_ImplUwp_Data
@@ -132,7 +132,7 @@ int WindowActivated(ABI::Windows::UI::Core::ICoreWindow*, ABI::Windows::UI::Core
 // FIXME: some shared resources (mouse cursor shape, gamepad) are mishandled when using multi-context.
 static ImGui_ImplUwp_Data* ImGui_ImplUwp_GetBackendData()
 {
-    return ImGui::GetCurrentContext() ? (ImGui_ImplUwp_Data*)ImGui::GetIO().BackendPlatformUserData : nullptr;
+    return ImGui::GetCurrentContext() ? static_cast<ImGui_ImplUwp_Data *>(ImGui::GetIO().BackendPlatformUserData) : nullptr;
 }
 
 static ABI::Windows::UI::Core::ICoreWindow* ImGui_ImplUwp_GetCoreWindowForCurrentThread()
@@ -152,25 +152,31 @@ static ABI::Windows::UI::Core::ICoreWindow* ImGui_ImplUwp_GetCoreWindowForCurren
 static bool ImGui_ImplUwp_InitEx(ABI::Windows::UI::Core::ICoreWindow* core_window, ABI::Windows::UI::Xaml::Controls::ISwapChainPanel* swapchain_panel, bool is_for_current_view)
 {
     ImGuiIO& io = ImGui::GetIO();
+
     IM_ASSERT(io.BackendPlatformUserData == nullptr && "Already initialized a platform backend!");
 
     INT64 perf_frequency, perf_counter;
-    if (!::QueryPerformanceFrequency((LARGE_INTEGER*)&perf_frequency))
+
+    if (!QueryPerformanceFrequency(reinterpret_cast<LARGE_INTEGER *>(&perf_frequency)))
         return false;
-    if (!::QueryPerformanceCounter((LARGE_INTEGER*)&perf_counter))
+
+    if (!QueryPerformanceCounter(reinterpret_cast<LARGE_INTEGER *>(&perf_counter)))
         return false;
 
     // Setup backend capabilities flags
-    ImGui_ImplUwp_Data* bd = IM_NEW(ImGui_ImplUwp_Data)();
-    io.BackendPlatformUserData = (void*)bd;
+    const auto bd = IM_NEW(ImGui_ImplUwp_Data)();
+
+    io.BackendPlatformUserData = static_cast<void *>(bd);
     io.BackendPlatformName = "imgui_impl_uwp";
     io.BackendFlags |= ImGuiBackendFlags_HasMouseCursors;         // We can honor GetMouseCursor() values (optional)
     io.BackendFlags |= ImGuiBackendFlags_HasSetMousePos;          // We can honor io.WantSetMousePos requests (optional, rarely used)
 
     // Clipboard support
-#if !defined(IMGUI_DISABLE_UWP_DEFAULT_CLIPBOARD_FUNCTIONS)
-    io.GetClipboardTextFn = ImGui_ImplUwp_GetClipboardTextFn;
-    io.SetClipboardTextFn = ImGui_ImplUwp_SetClipboardTextFn;
+#ifndef IMGUI_DISABLE_UWP_DEFAULT_CLIPBOARD_FUNCTIONS
+    ImGuiPlatformIO &platform_io = ImGui::GetPlatformIO();
+
+    platform_io.Platform_GetClipboardTextFn = ImGui_ImplUwp_GetClipboardTextFn;
+    platform_io.Platform_SetClipboardTextFn = ImGui_ImplUwp_SetClipboardTextFn;
 #endif
 
     if (core_window && !is_for_current_view)
@@ -189,13 +195,14 @@ static bool ImGui_ImplUwp_InitEx(ABI::Windows::UI::Core::ICoreWindow* core_windo
     bd->LastMouseCursor = ImGuiMouseCursor_COUNT;
 
     // Set platform dependent data in viewport
-    ImGui::GetMainViewport()->PlatformHandleRaw = (void*)core_window;
+    ImGui::GetMainViewport()->PlatformHandleRaw = static_cast<void *>(core_window);
 
     // Dynamically load XInput library
 #ifndef IMGUI_IMPL_UWP_DISABLE_GAMEPAD
+
     bd->WantUpdateHasGamepad = true;
-    const char* xinput_dll_names[] =
-    {
+
+    const char* xinput_dll_names[] = {
         "xinput1_4.dll",   // Windows 8+
         "xinput1_3.dll",   // DirectX SDK
         "xinput9_1_0.dll", // Windows Vista, Windows 7
@@ -203,12 +210,13 @@ static bool ImGui_ImplUwp_InitEx(ABI::Windows::UI::Core::ICoreWindow* core_windo
         "xinput1_1.dll",   // DirectX SDK
         "xinputuap.dll"    // OneCoreUAP
     };
-    for (int n = 0; n < IM_ARRAYSIZE(xinput_dll_names); n++)
-        if (HMODULE dll = ::LoadLibraryA(xinput_dll_names[n]))
+
+    for (auto &xinput_dll_name : xinput_dll_names)
+        if (const HMODULE dll = ::LoadLibraryA(xinput_dll_name))
         {
             bd->XInputDLL = dll;
-            bd->XInputGetCapabilities = (PFN_XInputGetCapabilities)::GetProcAddress(dll, "XInputGetCapabilities");
-            bd->XInputGetState = (PFN_XInputGetState)::GetProcAddress(dll, "XInputGetState");
+            bd->XInputGetCapabilities = reinterpret_cast<PFN_XInputGetCapabilities>(::GetProcAddress(dll, "XInputGetCapabilities"));
+            bd->XInputGetState = reinterpret_cast<PFN_XInputGetState>(::GetProcAddress(dll, "XInputGetState"));
             break;
         }
 #endif // IMGUI_IMPL_UWP_DISABLE_GAMEPAD
@@ -1073,9 +1081,9 @@ int PointerReleased(::IInspectable* sender, ABI::Windows::UI::Core::IPointerEven
 
 // UWP clipboard implementation
 #if !defined(IMGUI_DISABLE_UWP_DEFAULT_CLIPBOARD_FUNCTIONS)
-static const char* ImGui_ImplUwp_GetClipboardTextFn(void* user_data_ctx)
+static const char *ImGui_ImplUwp_GetClipboardTextFn(ImGuiContext *ctx)
 {
-    ImGuiContext& g = *(ImGuiContext*)user_data_ctx;
+    ImGuiContext& g = *(ImGuiContext*) ctx;
     g.ClipboardHandlerData.clear();
 
     Microsoft::WRL::ComPtr<ABI::Windows::ApplicationModel::DataTransfer::IClipboardStatics> clipboardStatics;
@@ -1135,7 +1143,7 @@ static const char* ImGui_ImplUwp_GetClipboardTextFn(void* user_data_ctx)
     return g.ClipboardHandlerData.Data;
 }
 
-static void ImGui_ImplUwp_SetClipboardTextFn(void*, const char* text)
+static void ImGui_ImplUwp_SetClipboardTextFn(ImGuiContext *ctx, const char *text)
 {
     Microsoft::WRL::ComPtr<ABI::Windows::ApplicationModel::DataTransfer::IDataPackage> dataPkg;
     Microsoft::WRL::ComPtr<ABI::Windows::ApplicationModel::DataTransfer::IClipboardStatics> clipboardStatics;
