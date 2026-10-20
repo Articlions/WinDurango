@@ -88,8 +88,7 @@ namespace winrt::Windows::Kinect::implementation
 
     Foundation::Collections::IVectorView<Kinect::AudioBeamFrame> AudioBeamFrameReader::AcquireLatestBeamFrames()
     {
-        p_wd->log.Warn("WinDurango::Kinect::Windows::Kinect::AudioBeamFrameReader", "Unimplemented: AcquireLatestBeamFrames");
-        throw hresult_not_implemented();
+        return m_latestBeamFrames;
     }
 
     bool AudioBeamFrameReader::IsPaused()
@@ -181,8 +180,7 @@ namespace winrt::Windows::Kinect::implementation
 
     KinectAudioCalibrationState AudioSource::AudioCalibrationState()
     {
-        p_wd->log.Warn("WinDurango::Kinect::Windows::Kinect::AudioSource", "Unimplemented: AudioCalibrationState");
-        throw hresult_not_implemented();
+        return m_kinectAudioCalibrationState;
     }
 
     event_token AudioSource::FrameCaptured(Foundation::TypedEventHandler<Kinect::AudioSource, Kinect::FrameCapturedEventArgs> const& handler)
@@ -199,201 +197,217 @@ namespace winrt::Windows::Kinect::implementation
 
     Kinect::KinectSensor AudioSource::KinectSensor()
     {
-        p_wd->log.Warn("WinDurango::Kinect::Windows::Kinect::AudioSource", "Unimplemented: KinectSensor");
-        throw hresult_not_implemented();
+        return m_kinectSensor;
     }
 
     bool AudioSource::IsActive()
     {
-        p_wd->log.Warn("WinDurango::Kinect::Windows::Kinect::AudioSource", "Unimplemented: IsActive");
-        throw hresult_not_implemented();
+        return m_isActive;
     }
 
     uint32_t AudioSource::SubFrameLengthInBytes()
     {
-        p_wd->log.Warn("WinDurango::Kinect::Windows::Kinect::AudioSource", "Unimplemented: SubFrameLengthInBytes");
-        throw hresult_not_implemented();
+        return m_subFrameLengthInBytes;
     }
     
     Foundation::TimeSpan AudioSource::SubFrameDuration()
     {
-        p_wd->log.Warn("WinDurango::Kinect::Windows::Kinect::AudioSource", "Unimplemented: SubFrameDuration");
-        throw hresult_not_implemented();
+        return m_subFrameDuration;
     }
 
     uint32_t AudioSource::MaxSubFrameCount()
     {
-        p_wd->log.Warn("WinDurango::Kinect::Windows::Kinect::AudioSource", "Unimplemented: MaxSubFrameCount");
-        throw hresult_not_implemented();
+        return m_maxSubFrameCount;
     }
-    winrt::Windows::Kinect::AudioBeamFrameReader AudioSource::OpenReader()
+    
+    Kinect::AudioBeamFrameReader AudioSource::OpenReader()
     {
-        p_wd->log.Warn("WinDurango::Kinect::Windows::Kinect::AudioSource", "Unimplemented: OpenReader");
-        throw hresult_not_implemented();
+        return m_audioBeamReader;
     }
-    winrt::Windows::Foundation::Collections::IVectorView<winrt::Windows::Kinect::AudioBeam> AudioSource::AudioBeams()
+    
+    Foundation::Collections::IVectorView<Kinect::AudioBeam> AudioSource::AudioBeams()
     {
-        p_wd->log.Warn("WinDurango::Kinect::Windows::Kinect::AudioSource", "Unimplemented: AudioBeams");
-        throw hresult_not_implemented();
+        return m_audioBeams;
     }
-    winrt::Windows::Foundation::TimeSpan ColorCameraSettings::ExposureTime()
+    
+    Foundation::TimeSpan ColorCameraSettings::ExposureTime()
     {
-        p_wd->log.Warn("WinDurango::Kinect::Windows::Kinect::ColorCameraSettings", "Unimplemented: ExposureTime");
-        throw hresult_not_implemented();
+        return m_exposureTime;
     }
-    winrt::Windows::Foundation::TimeSpan ColorCameraSettings::FrameInterval()
+    
+    Foundation::TimeSpan ColorCameraSettings::FrameInterval()
     {
-        p_wd->log.Warn("WinDurango::Kinect::Windows::Kinect::ColorCameraSettings", "Unimplemented: FrameInterval");
-        throw hresult_not_implemented();
+        return m_frameInterval;
     }
+
     float ColorCameraSettings::Gain()
     {
-        p_wd->log.Warn("WinDurango::Kinect::Windows::Kinect::ColorCameraSettings", "Unimplemented: Gain");
-        throw hresult_not_implemented();
+        return m_gain;
     }
+
     float ColorCameraSettings::Gamma()
     {
-        p_wd->log.Warn("WinDurango::Kinect::Windows::Kinect::ColorCameraSettings", "Unimplemented: Gamma");
-        throw hresult_not_implemented();
+        return m_gamma;
     }
-    winrt::Windows::Kinect::ColorImageFormat ColorFrame::RawColorImageFormat()
+
+    ColorImageFormat ColorFrame::RawColorImageFormat()
     {
-        p_wd->log.Warn("WinDurango::Kinect::Windows::Kinect::ColorFrame", "Unimplemented: RawColorImageFormat");
-        throw hresult_not_implemented();
+        return m_rawColorImageFormat;
     }
     
     Kinect::FrameDescription ColorFrame::FrameDescription()
     {
-        p_wd->log.Warn("WinDurango::Kinect::Windows::Kinect::ColorFrame", "Unimplemented: FrameDescription");
-        throw hresult_not_implemented();
+        return m_frameDescription;
     }
 
     com_array<uint8_t> ColorFrame::CopyRawFrameDataToArray()
     {
-        p_wd->log.Warn("WinDurango::Kinect::Windows::Kinect::ColorFrame", "Unimplemented: CopyRawFrameDataToArray");
-        throw hresult_not_implemented();
+        return winrt::com_array<uint8_t>(m_rawImageBuffer.data(), m_rawImageBuffer.data() + m_rawImageBuffer.Length());
     }
-    void ColorFrame::CopyRawFrameDataToBuffer(winrt::Windows::Storage::Streams::IBuffer const& buffer)
+
+    void ColorFrame::CopyRawFrameDataToBuffer(Storage::Streams::IBuffer const& buffer)
     {
-        p_wd->log.Warn("WinDurango::Kinect::Windows::Kinect::ColorFrame", "Unimplemented: CopyRawFrameDataToBuffer");
-        throw hresult_not_implemented();
+        m_rawImageBuffer = Storage::Streams::Buffer{buffer.Length()};
+
+        std::memcpy(m_rawImageBuffer.data(), buffer.data(), buffer.Length());
+
+        m_rawImageBuffer.Length(buffer.Length());
     }
-    winrt::Windows::Storage::Streams::IBuffer ColorFrame::LockRawImageBuffer()
+
+    Storage::Streams::IBuffer ColorFrame::LockRawImageBuffer()
     {
-        p_wd->log.Warn("WinDurango::Kinect::Windows::Kinect::ColorFrame", "Unimplemented: LockRawImageBuffer");
-        throw hresult_not_implemented();
+        return m_rawImageBuffer;
     }
-    com_array<uint8_t> ColorFrame::CopyConvertedFrameDataToArray(winrt::Windows::Kinect::ColorImageFormat const& colorFormat)
+
+    com_array<uint8_t> ColorFrame::CopyConvertedFrameDataToArray(ColorImageFormat const& colorFormat)
     {
         p_wd->log.Warn("WinDurango::Kinect::Windows::Kinect::ColorFrame", "Unimplemented: CopyConvertedFrameDataToArray");
         throw hresult_not_implemented();
     }
-    void ColorFrame::CopyConvertedFrameDataToBuffer(winrt::Windows::Storage::Streams::Buffer const& buffer, winrt::Windows::Kinect::ColorImageFormat const& colorFormat)
+    
+    void ColorFrame::CopyConvertedFrameDataToBuffer(Storage::Streams::Buffer const& buffer, ColorImageFormat const& colorFormat)
     {
         p_wd->log.Warn("WinDurango::Kinect::Windows::Kinect::ColorFrame", "Unimplemented: CopyConvertedFrameDataToBuffer");
         throw hresult_not_implemented();
     }
-    winrt::Windows::Kinect::FrameDescription ColorFrame::CreateFrameDescription(winrt::Windows::Kinect::ColorImageFormat const& format)
+    
+    Kinect::FrameDescription ColorFrame::CreateFrameDescription(ColorImageFormat const& format)
     {
         p_wd->log.Warn("WinDurango::Kinect::Windows::Kinect::ColorFrame", "Unimplemented: CreateFrameDescription");
         throw hresult_not_implemented();
     }
-    winrt::Windows::Kinect::ColorCameraSettings ColorFrame::ColorCameraSettings()
+    
+    Kinect::ColorCameraSettings ColorFrame::ColorCameraSettings()
     {
-        p_wd->log.Warn("WinDurango::Kinect::Windows::Kinect::ColorFrame", "Unimplemented: ColorCameraSettings");
-        throw hresult_not_implemented();
+        return m_colorCameraSettings;
     }
-    winrt::Windows::Foundation::TimeSpan ColorFrame::RelativeTime()
+    
+    Foundation::TimeSpan ColorFrame::RelativeTime()
     {
-        p_wd->log.Warn("WinDurango::Kinect::Windows::Kinect::ColorFrame", "Unimplemented: RelativeTime");
-        throw hresult_not_implemented();
+        return m_relativeTime;
     }
-    winrt::Windows::Kinect::ColorFrameSource ColorFrame::ColorFrameSource()
+    
+    Kinect::ColorFrameSource ColorFrame::ColorFrameSource()
     {
-        p_wd->log.Warn("WinDurango::Kinect::Windows::Kinect::ColorFrame", "Unimplemented: ColorFrameSource");
-        throw hresult_not_implemented();
+        return m_colorFrameSource;
     }
-    winrt::Windows::Kinect::ColorFrameReference ColorFrameArrivedEventArgs::FrameReference()
+    
+    Kinect::ColorFrameReference ColorFrameArrivedEventArgs::FrameReference()
     {
-        p_wd->log.Warn("WinDurango::Kinect::Windows::Kinect::ColorFrameArrivedEventArgs", "Unimplemented: FrameReference");
-        throw hresult_not_implemented();
+        return m_frameReference;
     }
-    winrt::event_token ColorFrameReader::FrameArrived(winrt::Windows::Foundation::TypedEventHandler<winrt::Windows::Kinect::ColorFrameReader, winrt::Windows::Kinect::ColorFrameArrivedEventArgs> const& handler)
+    
+    event_token ColorFrameReader::FrameArrived(Foundation::TypedEventHandler<Kinect::ColorFrameReader, Kinect::ColorFrameArrivedEventArgs> const& handler)
     {
         p_wd->log.Warn("WinDurango::Kinect::Windows::Kinect::ColorFrameReader", "Unimplemented: FrameArrived");
         throw hresult_not_implemented();
     }
+
     void ColorFrameReader::FrameArrived(winrt::event_token const& token) noexcept
     {
         p_wd->log.Warn("WinDurango::Kinect::Windows::Kinect::ColorFrameReader", "Unimplemented: FrameArrived");
         throw hresult_not_implemented();
     }
-    winrt::Windows::Kinect::ColorFrame ColorFrameReader::AcquireLatestFrame()
+    
+    Kinect::ColorFrame ColorFrameReader::AcquireLatestFrame()
     {
         p_wd->log.Warn("WinDurango::Kinect::Windows::Kinect::ColorFrameReader", "Unimplemented: AcquireLatestFrame");
         throw hresult_not_implemented();
     }
+
     bool ColorFrameReader::IsPaused()
     {
-        p_wd->log.Warn("WinDurango::Kinect::Windows::Kinect::ColorFrameReader", "Unimplemented: IsPaused");
-        throw hresult_not_implemented();
+        return m_isPaused;
     }
+
     void ColorFrameReader::IsPaused(bool value)
     {
-        p_wd->log.Warn("WinDurango::Kinect::Windows::Kinect::ColorFrameReader", "Unimplemented: IsPaused");
-        throw hresult_not_implemented();
+        m_isPaused = value;
     }
-    winrt::Windows::Kinect::ColorFrameSource ColorFrameReader::ColorFrameSource()
+    
+    Kinect::ColorFrameSource ColorFrameReader::ColorFrameSource()
     {
-        p_wd->log.Warn("WinDurango::Kinect::Windows::Kinect::ColorFrameReader", "Unimplemented: ColorFrameSource");
-        throw hresult_not_implemented();
+        return m_colorFrameSource;
     }
-    winrt::Windows::Kinect::ColorFrame ColorFrameReference::AcquireFrame()
+    
+    Kinect::ColorFrame ColorFrameReference::AcquireFrame()
     {
         p_wd->log.Warn("WinDurango::Kinect::Windows::Kinect::ColorFrameReference", "Unimplemented: AcquireFrame");
         throw hresult_not_implemented();
     }
-    winrt::Windows::Foundation::TimeSpan ColorFrameReference::RelativeTime()
+    
+    Foundation::TimeSpan ColorFrameReference::RelativeTime()
     {
         p_wd->log.Warn("WinDurango::Kinect::Windows::Kinect::ColorFrameReference", "Unimplemented: RelativeTime");
         throw hresult_not_implemented();
     }
-    winrt::event_token ColorFrameSource::FrameCaptured(winrt::Windows::Foundation::TypedEventHandler<winrt::Windows::Kinect::ColorFrameSource, winrt::Windows::Kinect::FrameCapturedEventArgs> const& handler)
+    
+    event_token ColorFrameSource::FrameCaptured(Foundation::TypedEventHandler<Kinect::ColorFrameSource, Kinect::FrameCapturedEventArgs> const& handler)
     {
         return {};
     }
-    void ColorFrameSource::FrameCaptured(winrt::event_token const& token) noexcept
+    
+    void ColorFrameSource::FrameCaptured(event_token const& token) noexcept
     {
+
     }
+
     bool ColorFrameSource::IsActive()
     {
         BOOLEAN isActive = 0;
-        m_pColorFrameSource->get_IsActive(&isActive);
-        return (bool)isActive;
+        
+        HRESULT hresult = m_pColorFrameSource->get_IsActive(&isActive);
+        
+        return isActive;
     }
-    winrt::Windows::Kinect::ColorFrameReader ColorFrameSource::OpenReader()
+    
+    Kinect::ColorFrameReader ColorFrameSource::OpenReader()
     {
         p_wd->log.Warn("WinDurango::Kinect::Windows::Kinect::ColorFrameSource", "Unimplemented: OpenReader");
         throw hresult_not_implemented();
     }
-    winrt::Windows::Kinect::FrameDescription ColorFrameSource::CreateFrameDescription(winrt::Windows::Kinect::ColorImageFormat const& format)
+    
+    Kinect::FrameDescription ColorFrameSource::CreateFrameDescription(ColorImageFormat const& format)
     {
         ::IFrameDescription *pFrameDescription = nullptr;
         m_pColorFrameSource->CreateFrameDescription((::ColorImageFormat)format, &pFrameDescription);
         return winrt::make<implementation::FrameDescription>(pFrameDescription);
     }
-    winrt::Windows::Kinect::FrameDescription ColorFrameSource::FrameDescription()
+    
+    Kinect::FrameDescription ColorFrameSource::FrameDescription()
     {
         ::IFrameDescription *pFrameDescription = nullptr;
         m_pColorFrameSource->get_FrameDescription(&pFrameDescription);
         return winrt::make<implementation::FrameDescription>(pFrameDescription);
     }
-    winrt::Windows::Kinect::KinectSensor ColorFrameSource::KinectSensor()
+    
+    Kinect::KinectSensor ColorFrameSource::KinectSensor()
     {
         p_wd->log.Warn("WinDurango::Kinect::Windows::Kinect::ColorFrameSource", "Unimplemented: KinectSensor");
         throw hresult_not_implemented();
     }
-    winrt::Windows::Kinect::CameraIntrinsics CoordinateMapper::GetDepthCameraIntrinsics()
+    
+    CameraIntrinsics CoordinateMapper::GetDepthCameraIntrinsics()
     {
         p_wd->log.Warn("WinDurango::Kinect::Windows::Kinect::CoordinateMapper", "Unimplemented: GetDepthCameraIntrinsics");
         throw hresult_not_implemented();
@@ -963,8 +977,7 @@ namespace winrt::Windows::Kinect::implementation
 
     Kinect::KinectSensor LongExposureInfraredFrameSource::KinectSensor()
     {
-        p_wd->log.Warn("WinDurango::Kinect::Windows::Kinect::LongExposureInfraredFrameSource", "Unimplemented: KinectSensor");
-        throw hresult_not_implemented();
+        return m_kinectSensor;
     }
 
     Kinect::ColorFrameReference MultiSourceFrame::ColorFrameReference()

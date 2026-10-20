@@ -108,6 +108,7 @@ namespace winrt::Windows::Kinect::implementation
         winrt::Windows::Kinect::AudioSource AudioSource();
 
     private:
+        winrt::Windows::Foundation::Collections::IVectorView<winrt::Windows::Kinect::AudioBeamFrame> m_latestBeamFrames;
         bool m_isPaused = false;
 		winrt::Windows::Kinect::AudioSource m_audioSource;
     };
@@ -173,6 +174,16 @@ namespace winrt::Windows::Kinect::implementation
         uint32_t MaxSubFrameCount();
         winrt::Windows::Kinect::AudioBeamFrameReader OpenReader();
         winrt::Windows::Foundation::Collections::IVectorView<winrt::Windows::Kinect::AudioBeam> AudioBeams();
+
+    private:
+        winrt::Windows::Kinect::KinectSensor m_kinectSensor;
+        bool m_isActive;
+		uint32_t m_subFrameLengthInBytes;
+        winrt::Windows::Kinect::KinectAudioCalibrationState m_kinectAudioCalibrationState;
+        winrt::Windows::Foundation::TimeSpan m_subFrameDuration;
+        uint32_t m_maxSubFrameCount;
+        winrt::Windows::Kinect::AudioBeamFrameReader m_audioBeamReader;
+        winrt::Windows::Foundation::Collections::IVectorView<winrt::Windows::Kinect::AudioBeam> m_audioBeams;
     };
 
     struct ColorCameraSettings : ColorCameraSettingsT<ColorCameraSettings>
@@ -183,6 +194,13 @@ namespace winrt::Windows::Kinect::implementation
         winrt::Windows::Foundation::TimeSpan FrameInterval();
         float Gain();
         float Gamma();
+
+    private:
+        winrt::Windows::Foundation::TimeSpan m_exposureTime;
+		winrt::Windows::Foundation::TimeSpan m_frameInterval;
+
+        float m_gain;
+		float m_gamma;
     };
 
     struct ColorFrame : ColorFrameT<ColorFrame>
@@ -200,6 +218,14 @@ namespace winrt::Windows::Kinect::implementation
         winrt::Windows::Kinect::ColorCameraSettings ColorCameraSettings();
         winrt::Windows::Foundation::TimeSpan RelativeTime();
         winrt::Windows::Kinect::ColorFrameSource ColorFrameSource();
+
+    private:
+        ColorImageFormat m_rawColorImageFormat = ColorImageFormat::Rgba;
+		winrt::Windows::Kinect::FrameDescription m_frameDescription;
+        winrt::Windows::Storage::Streams::IBuffer m_rawImageBuffer;
+        winrt::Windows::Kinect::ColorCameraSettings m_colorCameraSettings;
+        winrt::Windows::Foundation::TimeSpan m_relativeTime;
+        winrt::Windows::Kinect::ColorFrameSource m_colorFrameSource;
     };
 
     struct ColorFrameArrivedEventArgs : ColorFrameArrivedEventArgsT<ColorFrameArrivedEventArgs>
@@ -207,6 +233,9 @@ namespace winrt::Windows::Kinect::implementation
         ColorFrameArrivedEventArgs() = default;
 
         winrt::Windows::Kinect::ColorFrameReference FrameReference();
+
+    private:
+        winrt::Windows::Kinect::ColorFrameReference m_frameReference;
     };
 
     struct ColorFrameReader : ColorFrameReaderT<ColorFrameReader>
@@ -219,6 +248,10 @@ namespace winrt::Windows::Kinect::implementation
         bool IsPaused();
         void IsPaused(bool value);
         winrt::Windows::Kinect::ColorFrameSource ColorFrameSource();
+
+    private:
+        bool m_isPaused = false;
+		winrt::Windows::Kinect::ColorFrameSource m_colorFrameSource;
     };
 
     struct ColorFrameReference : ColorFrameReferenceT<ColorFrameReference>
@@ -415,6 +448,9 @@ namespace winrt::Windows::Kinect::implementation
         winrt::Windows::Kinect::LongExposureInfraredFrameReader OpenReader();
         winrt::Windows::Kinect::FrameDescription FrameDescription();
         winrt::Windows::Kinect::KinectSensor KinectSensor();
+
+    private:
+        winrt::Windows::Kinect::KinectSensor m_kinectSensor;
     };
 
     struct MultiSourceFrame : MultiSourceFrameT<MultiSourceFrame>
