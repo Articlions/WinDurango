@@ -1,6 +1,8 @@
 #pragma once
 #pragma comment(lib, "kinect20.lib")
 #include <kinect.h>
+#include <winrt/Windows.Storage.Streams.h>
+
 #include "Windows.Kinect.AudioBeam.g.h"
 #include "Windows.Kinect.AudioBeamFrame.g.h"
 #include "Windows.Kinect.AudioBeamFrameArrivedEventArgs.g.h"
@@ -55,6 +57,15 @@ namespace winrt::Windows::Kinect::implementation
         float BeamAngleConfidence();
         winrt::Windows::Storage::Streams::IInputStream OpenInputStream();
         winrt::Windows::Foundation::TimeSpan RelativeTime();
+
+    private:
+        winrt::Windows::Kinect::AudioSource m_audioSource;
+		winrt::Windows::Kinect::AudioBeamMode m_audioBeamMode;
+
+        float m_beamAngle = 0.0f;
+        float m_beamAngleConfidence = 0.0f;
+        winrt::Windows::Storage::Streams::IInputStream m_inputStream;
+        Foundation::TimeSpan m_relativeTime;
     };
 
     struct AudioBeamFrame : AudioBeamFrameT<AudioBeamFrame>
@@ -66,6 +77,13 @@ namespace winrt::Windows::Kinect::implementation
         winrt::Windows::Kinect::AudioBeam AudioBeam();
         winrt::Windows::Foundation::Collections::IVectorView<winrt::Windows::Kinect::AudioBeamSubFrame> SubFrames();
         winrt::Windows::Foundation::TimeSpan RelativeTimeStart();
+
+    private:
+        winrt::Windows::Kinect::AudioSource m_audioSource;
+		winrt::Windows::Foundation::TimeSpan m_duration;
+        winrt::Windows::Kinect::AudioBeam m_audioBeam;
+        winrt::Windows::Foundation::Collections::IVectorView<winrt::Windows::Kinect::AudioBeamSubFrame> m_subFrames;
+        winrt::Windows::Foundation::TimeSpan m_relativeTimeStart;
     };
 
     struct AudioBeamFrameArrivedEventArgs : AudioBeamFrameArrivedEventArgsT<AudioBeamFrameArrivedEventArgs>
@@ -73,6 +91,9 @@ namespace winrt::Windows::Kinect::implementation
         AudioBeamFrameArrivedEventArgs() = default;
 
         winrt::Windows::Kinect::AudioBeamFrameReference FrameReference();
+
+    private:
+        winrt::Windows::Kinect::AudioBeamFrameReference m_frameReference;
     };
 
     struct AudioBeamFrameReader : AudioBeamFrameReaderT<AudioBeamFrameReader>
@@ -85,6 +106,10 @@ namespace winrt::Windows::Kinect::implementation
         bool IsPaused();
         void IsPaused(bool value);
         winrt::Windows::Kinect::AudioSource AudioSource();
+
+    private:
+        bool m_isPaused = false;
+		winrt::Windows::Kinect::AudioSource m_audioSource;
     };
 
     struct AudioBeamFrameReference : AudioBeamFrameReferenceT<AudioBeamFrameReference>
@@ -93,6 +118,10 @@ namespace winrt::Windows::Kinect::implementation
 
         winrt::Windows::Foundation::Collections::IVectorView<winrt::Windows::Kinect::AudioBeamFrame> AcquireBeamFrames();
         winrt::Windows::Foundation::TimeSpan RelativeTime();
+
+    private:
+        Foundation::Collections::IVectorView<Kinect::AudioBeamFrame> m_audioBeamFrames;
+		winrt::Windows::Foundation::TimeSpan m_relativeTime;
     };
 
     struct AudioBeamSubFrame : AudioBeamSubFrameT<AudioBeamSubFrame>
@@ -109,6 +138,15 @@ namespace winrt::Windows::Kinect::implementation
         void CopyFrameDataToBuffer(winrt::Windows::Storage::Streams::IBuffer const& buffer);
         winrt::Windows::Storage::Streams::IBuffer LockAudioBuffer();
         winrt::Windows::Foundation::TimeSpan RelativeTime();
+
+    private:
+        winrt::Windows::Foundation::TimeSpan m_duration;
+		float m_beamAngle;
+        float m_beamAngleConfidence;
+        winrt::Windows::Kinect::AudioBeamMode m_audioBeamMode;
+        winrt::Windows::Foundation::Collections::IVectorView<winrt::Windows::Kinect::AudioBodyCorrelation> m_audioBodyCorrelations;
+        winrt::Windows::Storage::Streams::IBuffer m_lockAudioBuffer;
+        winrt::Windows::Foundation::TimeSpan m_relativeTime;
     };
 
     struct AudioBodyCorrelation : AudioBodyCorrelationT<AudioBodyCorrelation>
@@ -116,6 +154,9 @@ namespace winrt::Windows::Kinect::implementation
         AudioBodyCorrelation() = default;
 
         uint64_t BodyTrackingId();
+
+    private:
+        uint64_t m_bodyTrackingId = 0;
     };
 
     struct AudioSource : AudioSourceT<AudioSource>
@@ -216,6 +257,15 @@ namespace winrt::Windows::Kinect::implementation
         winrt::Windows::Kinect::DepthFrameSource DepthFrameSource();
         uint16_t DepthMinReliableDistance();
         uint16_t DepthMaxReliableDistance();
+
+    private:
+        uint16_t m_depthMinReliableDistance = 0;
+		uint16_t m_depthMaxReliableDistance = 0;
+
+        winrt::Windows::Storage::Streams::IBuffer m_lockImageBuffer;
+        winrt::Windows::Kinect::FrameDescription m_frameDescription;
+        winrt::Windows::Foundation::TimeSpan m_relativeTime;
+        winrt::Windows::Kinect::DepthFrameSource m_pDepthFrameSource;
     };
 
     struct DepthFrameArrivedEventArgs : DepthFrameArrivedEventArgsT<DepthFrameArrivedEventArgs>
@@ -223,6 +273,9 @@ namespace winrt::Windows::Kinect::implementation
         DepthFrameArrivedEventArgs() = default;
 
         winrt::Windows::Kinect::DepthFrameReference FrameReference();
+
+    private:
+        winrt::Windows::Kinect::DepthFrameReference m_frameReference;
     };
 
     struct DepthFrameReader : DepthFrameReaderT<DepthFrameReader>
@@ -235,6 +288,9 @@ namespace winrt::Windows::Kinect::implementation
         bool IsPaused();
         void IsPaused(bool value);
         winrt::Windows::Kinect::DepthFrameSource DepthFrameSource();
+
+    private:
+        bool m_isPaused = false;
     };
 
     struct DepthFrameReference : DepthFrameReferenceT<DepthFrameReference>
@@ -391,6 +447,9 @@ namespace winrt::Windows::Kinect::implementation
         bool IsPaused();
         void IsPaused(bool value);
         winrt::Windows::Kinect::KinectSensor KinectSensor();
+
+    private:
+        bool m_isPaused = false;
     };
 
     struct MultiSourceFrameReference : MultiSourceFrameReferenceT<MultiSourceFrameReference>
@@ -436,6 +495,9 @@ namespace winrt::Windows::Kinect::implementation
         IsAvailableChangedEventArgs() = default;
 
         bool IsAvailable();
+
+    private:
+        bool m_isAvailable = false;
     };
 
     struct FrameCapturedEventArgs : FrameCapturedEventArgsT<FrameCapturedEventArgs>
